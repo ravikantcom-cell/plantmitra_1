@@ -1,0 +1,46 @@
+name: plantmitra
+description: "A new Flutter project."
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.12.2 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # UI & Icons
+  cupertino_icons: ^1.0.8
+  dropdown_search: ^6.0.1
+
+  # Firebase
+  firebase_core: ^4.11.0
+  firebase_auth: ^6.5.4
+  cloud_firestore: ^6.6.0
+  firebase_storage: ^13.4.3
+
+  # Authentication & Utilities
+  google_sign_in: ^6.3.0
+  image_picker: ^1.2.2
+  geolocator: ^14.0.3
+  
+  # Notifications & Logic
+  fluttertoast: ^9.1.0
+  uuid: ^4.5.3
+  intl: ^0.20.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/data/plant_master.csv

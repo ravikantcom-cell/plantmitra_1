@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "18304713164",
+    "project_id": "plantmitra-ae339",
+    "storage_bucket": "plantmitra-ae339.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:18304713164:android:ebcfd23f5ec077309cdd69",
+        "android_client_info": {
+          "package_name": "com.example.plantmitra"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "18304713164-8sab0655jqlv106okkrjp8mltlfa61gs.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.plantmitra",
+            "certificate_hash": "6926e68358c1f998a5d61988bf2e7d085bef7057"
+          }
+        },
+        {
+          "client_id": "18304713164-g690vtm2g35r7iclr1bgctkq0291sa08.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA3Rt6m0wz04Hqh8P81iyRm9WqxpT-ZMI4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "18304713164-g690vtm2g35r7iclr1bgctkq0291sa08.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "18304713164-cplc1ut9vj7e4e96poih62lgi08u0n78.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.plantmitra"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

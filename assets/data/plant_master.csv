@@ -1,0 +1,36 @@
+id,name,scientificName,category,subCategory
+money_plant,Money Plant,Epipremnum aureum,Indoor Plant,Foliage
+snake_plant,Snake Plant,Dracaena trifasciata,Indoor Plant,Foliage
+peace_lily,Peace Lily,Spathiphyllum wallisii,Indoor Plant,Flowering
+spider_plant,Spider Plant,Chlorophytum comosum,Indoor Plant,Foliage
+zz_plant,ZZ Plant,Zamioculcas zamiifolia,Indoor Plant,Foliage
+lucky_bamboo,Lucky Bamboo,Dracaena sanderiana,Indoor Plant,Feng Shui
+monstera,Monstera,Monstera deliciosa,Exotic Plant,Foliage
+philodendron,Philodendron,Philodendron scandens,Indoor Plant,Foliage
+jade_plant,Jade Plant,Crassula ovata,Succulent,Succulent
+aloe_vera,Aloe Vera,Aloe barbadensis,Medicinal Plant,Succulent
+rose,Rose,Rosa,Flowering Plant,Flower
+hibiscus,Hibiscus,Hibiscus rosa-sinensis,Flowering Plant,Flower
+jasmine,Jasmine,Jasminum,Flowering Plant,Flower
+marigold,Marigold,Tagetes,Flowering Plant,Flower
+bougainvillea,Bougainvillea,Bougainvillea,Outdoor Plant,Flower
+tulsi,Tulsi,Ocimum tenuiflorum,Medicinal Plant,Herb
+mint,Mint,Mentha,Herb,Herb
+coriander,Coriander,Coriandrum sativum,Herb,Herb
+curry_leaf,Curry Leaf,Murraya koenigii,Herb,Tree
+rosemary,Rosemary,Salvia rosmarinus,Herb,Herb
+neem,Neem,Azadirachta indica,Tree,Medicinal
+mango,Mango,Mangifera indica,Fruit Plant,Tree
+guava,Guava,Psidium guajava,Fruit Plant,Tree
+lemon,Lemon,Citrus limon,Fruit Plant,Tree
+papaya,Papaya,Carica papaya,Fruit Plant,Tree
+banana,Banana,Musa,Fruit Plant,Tree
+pomegranate,Pomegranate,Punica granatum,Fruit Plant,Tree
+tomato,Tomato,Solanum lycopersicum,Vegetable Plant,Vegetable
+chilli,Chilli,Capsicum annuum,Vegetable Plant,Vegetable
+brinjal,Brinjal,Solanum melongena,Vegetable Plant,Vegetable
+okra,Okra,Abelmoschus esculentus,Vegetable Plant,Vegetable
+cactus,Cactus,Cactaceae,Cactus,Cactus
+golden_barrel,Golden Barrel,Echinocactus grusonii,Cactus,Cactus
+haworthia,Haworthia,Haworthia,Succulent,Succulent
+echeveria,Echeveria,Echeveria,Succulent,Succulent
