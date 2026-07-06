@@ -144,13 +144,27 @@ class PlantDetailScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    plant["name"] ?? "",
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 15),
+  plant["name"] ?? "",
+  style: const TextStyle(
+    fontSize: 28,
+    fontWeight: FontWeight.bold,
+  ),
+),
+
+if ((plant["scientificName"] ?? "").toString().isNotEmpty)
+  Padding(
+    padding: const EdgeInsets.only(top: 5),
+    child: Text(
+      plant["scientificName"],
+      style: TextStyle(
+        fontSize: 17,
+        color: Colors.grey.shade700,
+        fontStyle: FontStyle.italic,
+      ),
+    ),
+  ),
+
+const SizedBox(height: 15),
                   Row(
                     children: [
                       const Icon(
@@ -174,6 +188,50 @@ class PlantDetailScreen extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  Card(
+  elevation: 2,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(12),
+  ),
+  child: Padding(
+    padding: const EdgeInsets.all(15),
+    child: Column(
+      children: [
+
+        Row(
+          children: [
+            const Icon(Icons.category,color: Colors.green),
+            const SizedBox(width:10),
+            Expanded(
+              child: Text(
+                "Category : ${plant["category"] ?? "-"}",
+                style: const TextStyle(fontSize:16),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height:12),
+
+        Row(
+          children: [
+            const Icon(Icons.eco,color: Colors.orange),
+            const SizedBox(width:10),
+            Expanded(
+              child: Text(
+                "Sub Category : ${plant["subCategory"] ?? "-"}",
+                style: const TextStyle(fontSize:16),
+              ),
+            ),
+          ],
+        ),
+
+      ],
+    ),
+  ),
+),
+
+const SizedBox(height:20),
                   const SizedBox(height: 10),
                   Container(
                     width: double.infinity,
@@ -212,7 +270,67 @@ class PlantDetailScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 25),
+                  Card(
+  elevation: 2,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(12),
+  ),
+  child: ListTile(
+    leading: CircleAvatar(
+      backgroundColor: Colors.green,
+      backgroundImage:
+          (plant["ownerPhoto"] ?? "").toString().isNotEmpty
+              ? NetworkImage(plant["ownerPhoto"])
+              : null,
+      child: (plant["ownerPhoto"] ?? "").toString().isEmpty
+          ? const Icon(Icons.person,color: Colors.white)
+          : null,
+    ),
+    title: Text(
+      plant["ownerName"] ?? "Unknown",
+      style: const TextStyle(
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+    subtitle: Text(
+      plant["ownerEmail"] ?? "",
+    ),
+  ),
+),
 
+const SizedBox(height:20),
+Row(
+  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  children: [
+
+    Column(
+      children: [
+        const Icon(Icons.favorite,color: Colors.red),
+        const SizedBox(height:4),
+        Text("${plant["favoriteCount"] ?? 0}"),
+      ],
+    ),
+
+    Column(
+      children: [
+        const Icon(Icons.chat,color: Colors.blue),
+        const SizedBox(height:4),
+        Text("${plant["chatCount"] ?? 0}"),
+      ],
+    ),
+
+    Column(
+      children: [
+        const Icon(Icons.visibility,color: Colors.green),
+        const SizedBox(height:4),
+        Text("${plant["views"] ?? 0}"),
+      ],
+    ),
+
+  ],
+),
+
+const SizedBox(height:25),
                   // Chat button (only for other user's plants)
                   if (!isOwner)
                     SizedBox(

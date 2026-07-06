@@ -100,23 +100,20 @@ if (mounted) {
     }
   }
 
-  Future<String> uploadImage() async {
-    if (selectedImage == null) return "";
+  
 
-    // Generate unique filename
-    final String fileName = "${const Uuid().v4()}.jpg";
-    final ref = storage.ref().child("plants").child(fileName);
+   Future<String> uploadImage() async {
+  // Temporary
+  // Firebase Storage use nahi karenge
 
-    final UploadTask uploadTask = ref.putFile(selectedImage!);
-    
-    try {
-      await uploadTask; // Wait for upload to finish
-      return await ref.getDownloadURL();
-    } catch (e) {
-      Fluttertoast.showToast(msg: "Image upload failed: $e");
-      rethrow; // Re-throw to stop submission
-    }
+  if (selectedImage == null) {
+    return "";
   }
+
+  debugPrint("Image selected but upload skipped.");
+
+  return "";
+}
 
   Future<void> submitPlant() async {
     print("Selected Plant = ${selectedPlant?["name"]}");
@@ -127,10 +124,7 @@ if (mounted) {
       return;
     }
 
-    if (selectedImage == null) {
-      Fluttertoast.showToast(msg: "Please select an image");
-      return;
-    }
+   
 
     try {
       setState(() {
@@ -138,7 +132,8 @@ if (mounted) {
       });
 
       // 1. Upload Image
-      final imageUrl = await uploadImage();
+      // 1. Upload Image (Optional)
+String imageUrl = await uploadImage();
 
       final user = auth.currentUser;
       if (user == null) {
@@ -230,37 +225,54 @@ if (mounted) {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Image Section
             GestureDetector(
-              onTap: isUploading ? null : pickImage,
-              child: Container(
-                height: 220,
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: Colors.green.shade300, width: 2),
-                ),
-                child: selectedImage == null
-                    ? const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.camera_alt, color: Colors.green, size: 70),
-                          SizedBox(height: 10),
-                          Text(
-                            "Tap to Select Image",
-                            style: TextStyle(fontSize: 18, color: Colors.grey),
-                          ),
-                        ],
-                      )
-                    : ClipRRect(
-                        borderRadius: BorderRadius.circular(15),
-                        child: Image.file(selectedImage!, fit: BoxFit.cover),
-                      ),
+  onTap: isUploading ? null : pickImage,
+  child: Container(
+    height: 220,
+    decoration: BoxDecoration(
+      color: Colors.green.shade50,
+      borderRadius: BorderRadius.circular(15),
+      border: Border.all(
+        color: Colors.green,
+      ),
+    ),
+    child: selectedImage == null
+        ? const Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+
+              Icon(
+                Icons.camera_alt,
+                size: 70,
+                color: Colors.green,
               ),
+
+              SizedBox(height: 10),
+
+              Text(
+                "Image Optional",
+                style: TextStyle(fontSize: 18),
+              ),
+
+              SizedBox(height: 6),
+
+              Text(
+                "Tap to choose image",
+                style: TextStyle(color: Colors.grey),
+              ),
+            ],
+          )
+        : ClipRRect(
+            borderRadius: BorderRadius.circular(15),
+            child: Image.file(
+              selectedImage!,
+              fit: BoxFit.cover,
             ),
+          ),
+  ),
+),
 
-            const SizedBox(height: 20),
-
+const SizedBox(height: 20),
             // Plant Name Autocomplete
             DropdownSearch<Map<String, dynamic>>(
   items: (filter, infiniteScrollProps) => masterPlants,
