@@ -1,16 +1,13 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dropdown_search/dropdown_search.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
-
-// NOTE: Ensure you have a PlantMasterService class or remove this if you are fetching from Firestore directly.
-// For this fix, I will assume you are fetching plants from Firestore as per your broken code.
+import 'package:dropdown_search/dropdown_search.dart';
 
 class AddPlantScreen extends StatefulWidget {
   const AddPlantScreen({super.key});
@@ -20,46 +17,118 @@ class AddPlantScreen extends StatefulWidget {
 }
 
 class _AddPlantScreenState extends State<AddPlantScreen> {
+  // --- Firebase ---
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
+  final FirebaseStorage storage = FirebaseStorage.instance;
+  final FirebaseAuth auth = FirebaseAuth.instance;
+
+  // --- Form & UI ---
   final _formKey = GlobalKey<FormState>();
+  final ImagePicker picker = ImagePicker();
 
-  final ImagePicker _picker = ImagePicker();
-
-  File? _image;
-
+  File? selectedImage;
   bool isUploading = false;
-
   bool isFree = true;
+  List<Map<String, dynamic>> masterPlants = [];
+  Map<String, dynamic>? selectedPlant;
 
-  final _descriptionController = TextEditingController();
+  // --- Controllers ---
+  final TextEditingController plantController = TextEditingController();
+  final TextEditingController locationController = TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
+  final TextEditingController priceController = TextEditingController();
 
-  final _locationController = TextEditingController();
+  @override
+  void initState() {
+    super.initState();
+    loadPlants();
+  }
 
-  final _priceController = TextEditingController();
+  Future<void> loadPlants() async {
+    debugPrint("loadPlants() STARTED");
+    try {
+      final snapshot = await firestore
+    .collection("plant_master")
+    .get();
 
-  String? selectedPlant;
+          debugPrint("Documents = ${snapshot.docs.length}");
 
-  Map<String, dynamic>? selectedPlantData;
+      masterPlants = snapshot.docs
+    .map((e) => {"id": e.id, ...e.data()})
+    .toList();
+    masterPlants.sort(
+  (a, b) => a["name"].toString().compareTo(
+        b["name"].toString(),
+      ),
+);
 
+setState(() {});
+
+debugPrint("Plants Loaded: ${masterPlants.length}");
+debugPrint(masterPlants.toString());
+if (masterPlants.isNotEmpty) {
+  debugPrint(masterPlants.first.toString());
+}
+
+if (mounted) {
+  setState(() {});
+}
+   } catch (e, stack) {
+  print("================================");
+  print("ERROR TYPE : ${e.runtimeType}");
+  print("ERROR      : $e");
+  print("STACK");
+  print(stack);
+  print("================================");
+
+  Fluttertoast.showToast(msg: "$e");
+}  }
   Future<void> pickImage() async {
-    final file = await _picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 70,
-    );
+    try {
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+      );
 
-    if (file != null) {
-      setState(() {
-        _image = File(file.path);
-      });
+      if (image != null) {
+        setState(() {
+          selectedImage = File(image.path);
+        });
+      }
+    } catch (e) {
+      Fluttertoast.showToast(msg: "Failed to pick image: $e");
+    }
+  }
+
+  Future<String> uploadImage() async {
+    if (selectedImage == null) return "";
+
+    // Generate unique filename
+    final String fileName = "${const Uuid().v4()}.jpg";
+    final ref = storage.ref().child("plants").child(fileName);
+
+    final UploadTask uploadTask = ref.putFile(selectedImage!);
+    
+    try {
+      await uploadTask; // Wait for upload to finish
+      return await ref.getDownloadURL();
+    } catch (e) {
+      Fluttertoast.showToast(msg: "Image upload failed: $e");
+      rethrow; // Re-throw to stop submission
     }
   }
 
   Future<void> submitPlant() async {
+    print("Selected Plant = ${selectedPlant?["name"]}");
     if (!_formKey.currentState!.validate()) return;
 
     if (selectedPlant == null) {
-      Fluttertoast.showToast(
-        msg: "Please select plant",
-      );
+      Fluttertoast.showToast(msg: "Please select a plant from the list");
+      return;
+    }
+
+    if (selectedImage == null) {
+      Fluttertoast.showToast(msg: "Please select an image");
       return;
     }
 
@@ -68,100 +137,82 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         isUploading = true;
       });
 
-      final user = FirebaseAuth.instance.currentUser!;
+      // 1. Upload Image
+      final imageUrl = await uploadImage();
 
-      String imageUrl = "";
-
-      if (_image != null) {
-        final ref = FirebaseStorage.instance
-            .ref()
-            .child("plants")
-            .child("${const Uuid().v4()}.jpg");
-
-        await ref.putFile(_image!);
-
-        imageUrl = await ref.getDownloadURL();
+      final user = auth.currentUser;
+      if (user == null) {
+        Fluttertoast.showToast(msg: "User not logged in");
+        setState(() => isUploading = false);
+        return;
       }
 
-      await FirebaseFirestore.instance.collection("plants").add({
-        "name": selectedPlant,
-        "scientificName": selectedPlantData?["scientificName"],
-        "category": selectedPlantData?["category"],
-        "subCategory": selectedPlantData?["subCategory"],
-        "description": _descriptionController.text.trim(),
-        "location": _locationController.text.trim(),
+      // 2. Parse Price Safely
+      double priceValue = 0.0;
+      if (!isFree) {
+        final priceStr = priceController.text.trim();
+        if (priceStr.isEmpty) {
+          Fluttertoast.showToast(msg: "Enter a valid price");
+          setState(() => isUploading = false);
+          return;
+        }
+        try {
+          priceValue = double.parse(priceStr);
+        } catch (e) {
+          Fluttertoast.showToast(msg: "Price must be a number");
+          setState(() => isUploading = false);
+          return;
+        }
+      }
+
+      // 3. Add to Firestore
+      await firestore.collection("plants").add({
+        "masterPlantId": selectedPlant!["id"],
+        "name": selectedPlant!["name"],
+        "scientificName": selectedPlant!["scientificName"],
+        "category": selectedPlant!["category"],
+        "subCategory": selectedPlant!["subCategory"],
+        "description": descriptionController.text.trim(),
+        "location": locationController.text.trim(),
         "imageUrl": imageUrl,
         "isFree": isFree,
-        "price": isFree
-            ? 0
-            : int.tryParse(_priceController.text.trim()) ?? 0,
+        "price": isFree ? 0 : priceValue, // Using double for flexibility
         "ownerId": user.uid,
+        "ownerName": user.displayName ?? "",
+        "ownerEmail": user.email ?? "",
+        "ownerPhoto": user.photoURL ?? "",
+        "favoriteCount": 0,
+        "chatCount": 0,
+        "views": 0,
+        "status": "Available",
         "createdAt": FieldValue.serverTimestamp(),
-      });
-
-      Fluttertoast.showToast(
-        msg: "Plant Added Successfully",
-      );
-
-      _descriptionController.clear();
-      _locationController.clear();
-      _priceController.clear();
-
-      setState(() {
-        selectedPlant = null;
-        selectedPlantData = null;
-        _image = null;
-        isFree = true;
+        "updatedAt": FieldValue.serverTimestamp(),
       });
 
       if (mounted) {
+        Fluttertoast.showToast(msg: "Plant Added Successfully 🌱", backgroundColor: Colors.green);
         Navigator.pop(context);
       }
     } catch (e) {
-      Fluttertoast.showToast(msg: e.toString());
+      print("Submit Error: $e");
+      if (mounted) {
+        Fluttertoast.showToast(msg: "Failed to add plant: $e");
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          isUploading = false;
+        });
+      }
     }
-
-    setState(() {
-      isUploading = false;
-    });
-  }
-
-  Widget buildField({
-    required TextEditingController controller,
-    required String label,
-    int maxLines = 1,
-    bool requiredField = false,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
-      child: TextFormField(
-        controller: controller,
-        keyboardType: keyboardType,
-        maxLines: maxLines,
-        validator: requiredField
-            ? (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return "Enter $label";
-                }
-                return null;
-              }
-            : null,
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      ),
-    );
   }
 
   @override
   void dispose() {
-    _descriptionController.dispose();
-    _locationController.dispose();
-    _priceController.dispose();
+    plantController.dispose();
+    locationController.dispose();
+    descriptionController.dispose();
+    priceController.dispose();
     super.dispose();
   }
 
@@ -172,202 +223,177 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         title: const Text("Add Plant"),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              GestureDetector(
-                onTap: pickImage,
-                child: Container(
-                  height: 220,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    border: Border.all(color: Colors.green),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: _image == null
-                      ? const Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.camera_alt,
-                              size: 60,
-                              color: Colors.green,
-                            ),
-                            SizedBox(height: 10),
-                            Text("Tap to select image"),
-                          ],
-                        )
-                      : ClipRRect(
-                          borderRadius: BorderRadius.circular(15),
-                          child: Image.file(
-                            _image!,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // ✅ FIXED: Proper StreamBuilder for fetching plants
-              StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-    .collection("plant_master")
-    .where("active", isEqualTo: true)
-    .orderBy("name")
-    .snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return const Center(child: Text("Error loading plants"));
-                  }
-
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  final docs = snapshot.data!.docs;
-
-                  if (docs.isEmpty) {
-                    return const Center(child: Text("No plants available"));
-                  }
-
-                  return DropdownSearch<String>(
-                    selectedItem: selectedPlant,
-                    items: (String filter, LoadProps? loadProps) {
-  return docs
-      .map((e) => e["name"]?.toString() ?? "Unknown")
-      .where((name) =>
-          filter.isEmpty ||
-          name.toLowerCase().contains(filter.toLowerCase()))
-      .toList();
-},
-                    popupProps: const PopupProps.menu(
-                      showSearchBox: true,
-                    ),
-                    decoratorProps: const DropDownDecoratorProps(
-                      decoration: InputDecoration(
-                        labelText: "Select Plant",
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.local_florist),
-                      ),
-                    ),
-                    onChanged: (value) {
-  final selected = docs.firstWhere(
-    (e) => e["name"] == value,
-  );
-
-  setState(() {
-    selectedPlant = value;
-    selectedPlantData =
-        selected.data() as Map<String, dynamic>;
-  });
-},
-                  );
-                },
-              ),
-
-              const SizedBox(height: 20),
-
-              if (selectedPlantData != null)
-                Card(
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            // Image Section
+            GestureDetector(
+              onTap: isUploading ? null : pickImage,
+              child: Container(
+                height: 220,
+                decoration: BoxDecoration(
                   color: Colors.green.shade50,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Scientific Name",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green.shade800,
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          selectedPlantData!["scientificName"] ?? "N/A",
-                          style: const TextStyle(
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          "Category : ${selectedPlantData!["category"] ?? "N/A"}",
-                        ),
-                        Text(
-                          "Sub Category : ${selectedPlantData!["subCategory"] ?? "N/A"}",
-                        ),
-                      ],
-                    ),
-                  ),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: Colors.green.shade300, width: 2),
                 ),
-
-              const SizedBox(height: 20),
-
-              buildField(
-                controller: _descriptionController,
-                label: "Description",
-                maxLines: 3,
+                child: selectedImage == null
+                    ? const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.camera_alt, color: Colors.green, size: 70),
+                          SizedBox(height: 10),
+                          Text(
+                            "Tap to Select Image",
+                            style: TextStyle(fontSize: 18, color: Colors.grey),
+                          ),
+                        ],
+                      )
+                    : ClipRRect(
+                        borderRadius: BorderRadius.circular(15),
+                        child: Image.file(selectedImage!, fit: BoxFit.cover),
+                      ),
               ),
+            ),
 
-              buildField(
-                controller: _locationController,
-                label: "Location",
-                requiredField: true,
+            const SizedBox(height: 20),
+
+            // Plant Name Autocomplete
+            DropdownSearch<Map<String, dynamic>>(
+  items: (filter, infiniteScrollProps) => masterPlants,
+
+  itemAsString: (item) => item["name"].toString(),
+  compareFn: (item1, item2) => item1["id"] == item2["id"],
+  selectedItem: selectedPlant,
+
+  popupProps: PopupProps.menu(
+    showSearchBox: true,
+    fit: FlexFit.loose,
+    searchFieldProps: const TextFieldProps(
+      decoration: InputDecoration(
+        hintText: "Search Plant...",
+      ),
+    ),
+  ),
+
+  decoratorProps: DropDownDecoratorProps(
+    decoration: InputDecoration(
+      labelText: "Plant Name",
+      prefixIcon: const Icon(Icons.local_florist),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+    ),
+  ),
+
+  onChanged: (plant) {
+    setState(() {
+      selectedPlant = plant;
+    });
+
+    print("Selected Plant = ${plant?["name"]}");
+  },
+
+  validator: (value) {
+    if (value == null) {
+      return "Select Plant";
+    }
+    return null;
+  },
+),
+
+            const SizedBox(height: 20),
+
+            // Description
+            TextFormField(
+              controller: descriptionController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: "Description",
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                filled: true,
+                fillColor: Colors.grey.shade50,
               ),
+            ),
 
-              SwitchListTile(
-                title: const Text("Free Plant"),
-                value: isFree,
-                activeThumbColor: Colors.green,
-                onChanged: (value) {
-                  setState(() {
-                    isFree = value;
-                  });
+            const SizedBox(height: 20),
+
+            // Location
+            TextFormField(
+              controller: locationController,
+              validator: (value) {
+                if (value == null || value.isEmpty) return "Enter Location";
+                return null;
+              },
+              decoration: InputDecoration(
+                labelText: "Location",
+                prefixIcon: const Icon(Icons.location_on, color: Colors.green),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                filled: true,
+                fillColor: Colors.grey.shade50,
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Free Switch
+            SwitchListTile(
+              value: isFree,
+              title: const Text("Free Plant?", style: TextStyle(fontSize: 16)),
+              subtitle: const Text("Gift this plant for free"),
+              onChanged: (value) {
+                setState(() {
+                  isFree = value;
+                  if (value) priceController.clear(); // Clear price if free
+                });
+              },
+            ),
+
+            if (!isFree) ...[
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: priceController,
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) return "Enter Price";
+                  return null;
                 },
-              ),
-
-              if (!isFree)
-                buildField(
-                  controller: _priceController,
-                  label: "Price",
-                  keyboardType: TextInputType.number,
-                ),
-
-              const SizedBox(height: 20),
-
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                  ),
-                  onPressed: isUploading ? null : submitPlant,
-                  icon: isUploading
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Icon(Icons.cloud_upload),
-                  label: Text(
-                    isUploading ? "Uploading..." : "Submit Plant",
-                    style: const TextStyle(fontSize: 18),
-                  ),
+                decoration: InputDecoration(
+                  labelText: "Price (₹)",
+                  prefixIcon: const Icon(Icons.money, color: Colors.green),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
                 ),
               ),
             ],
-          ),
+
+            const SizedBox(height: 30),
+
+            // Submit Button
+            SizedBox(
+              height: 55,
+              child: ElevatedButton.icon(
+                onPressed: isUploading ? null : submitPlant,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: isUploading
+                    ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Icon(Icons.cloud_upload, size: 24),
+                label: Text(
+                  isUploading ? "Uploading..." : "Submit Plant",
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
         ),
       ),
     );

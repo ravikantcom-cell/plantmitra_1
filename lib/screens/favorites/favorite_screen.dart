@@ -1,127 +1,100 @@
-import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:plantmitra/services/favorite_service.dart';
-import 'package:plantmitra/screens/detail/plant_detail_screen.dart';
+import 'package:flutter/material.dart';
 
-class FavoritesScreen extends StatefulWidget {
-  const FavoritesScreen({Key? key}) : super(key: key);
+import '../detail/plant_detail_screen.dart';
 
-  @override
-  State<FavoritesScreen> createState() => _FavoritesScreenState();
-}
-
-class _FavoritesScreenState extends State<FavoritesScreen> {
-  final FavoriteService _favoriteService = FavoriteService();
-  List<dynamic> _favoritePlants = [];
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadFavorites();
-  }
-
-  Future<void> _loadFavorites() async {
-    setState(() => _isLoading = true);
-    
-    try {
-      final userId = FirebaseAuth.instance.currentUser?.uid;
-      if (userId != null) {
-        final favorites = await _favoriteService.getFavorites(userId);
-        setState(() {
-          _favoritePlants = favorites;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      print("Error loading favorites: $e");
-      setState(() => _isLoading = false);
-    }
-  }
+class FavoritesScreen extends StatelessWidget {
+  const FavoritesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text("❤️ Favorites"),
+        title: const Text("Favorites"),
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : _favoritePlants.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.favorite, size: 64, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text(
-                        "No favorite plants yet",
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  itemCount: _favoritePlants.length,
-                  itemBuilder: (context, index) {
-                    final plant = _favoritePlants[index];
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: Colors.green,
-                        child: Icon(Icons.local_florist, color: Colors.green),
-                      ),
-                      title: Text(
-                        plant['name'] ?? 'Unknown Plant',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text(plant['location'] ?? 'Location not available'),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            plant['price']?.toString() ?? 'FREE',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          SizedBox(width: 8),
-                          IconButton(
-                            icon: Icon(Icons.favorite, color: Colors.red),
-                            onPressed: () => _removeFavorite(plant),
-                          ),
-                        ],
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection("users")
+            .doc(uid)
+            .collection("favorites")
+            .snapshots(),
+        builder: (context, favSnapshot) {
+          if (!favSnapshot.hasData) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          final favDocs = favSnapshot.data!.docs;
+
+          if (favDocs.isEmpty) {
+            return const Center(
+              child: Text("No Favorite Plants"),
+            );
+          }
+
+          return ListView.builder(
+            itemCount: favDocs.length,
+            itemBuilder: (context, index) {
+              final plantId = favDocs[index].id;
+
+              return FutureBuilder<DocumentSnapshot>(
+                future: FirebaseFirestore.instance
+                    .collection("plants")
+                    .doc(plantId)
+                    .get(),
+                builder: (context, plantSnapshot) {
+                  if (!plantSnapshot.hasData) {
+                    return const SizedBox();
+                  }
+
+                  if (!plantSnapshot.data!.exists) {
+                    return const SizedBox();
+                  }
+
+                  final plant = plantSnapshot.data!.data()
+                      as Map<String, dynamic>;
+
+                  return Card(
+                    child: ListTile(
+                      leading: plant["imageUrl"] != null
+                          ? Image.network(
+                              plant["imageUrl"],
+                              width: 60,
+                              fit: BoxFit.cover,
+                            )
+                          : const Icon(Icons.local_florist),
+                      title: Text(plant["name"]),
+                      subtitle: Text(plant["location"] ?? ""),
+                      trailing: Text(
+                        plant["isFree"] == true
+                            ? "FREE"
+                            : "₹${plant["price"]}",
                       ),
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => PlantDetailScreen(
-                              plantId: plant['id'],
-                              plantData: plant,
+                            builder: (_) => PlantDetailScreen(
+                              documentId: plantId,
+                              plant: plant,
                             ),
                           ),
                         );
                       },
-                    );
-                  },
-                ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _loadFavorites,
-        child: Icon(Icons.refresh),
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
       ),
     );
-  }
-
-  Future<void> _removeFavorite(dynamic plant) async {
-    try {
-      await _favoriteService.removeFavorite(
-        FirebaseAuth.instance.currentUser!.uid,
-        plant['id'],
-      );
-      _loadFavorites();
-    } catch (e) {
-      print("Error removing favorite: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to remove favorite")),
-      );
-    }
   }
 }

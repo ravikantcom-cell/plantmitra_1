@@ -1,43 +1,39 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../services/favorite_service.dart';
+import 'favorite_service.dart';
+import 'package:plantmitra/services/favorite_service.dart';
 
 class FavoriteService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  String? get _uid => _auth.currentUser?.uid;
+  String get uid => FirebaseAuth.instance.currentUser!.uid;
 
   Future<void> toggleFavorite(String plantId) async {
-    if (_uid == null) return;
-
-    final doc = _firestore
+    final ref = _db
         .collection("users")
-        .doc(_uid)
+        .doc(uid)
         .collection("favorites")
         .doc(plantId);
 
-    final snapshot = await doc.get();
+    final doc = await ref.get();
 
-    if (snapshot.exists) {
-      await doc.delete();
+    if (doc.exists) {
+      await ref.delete();
     } else {
-      await doc.set({
+      await ref.set({
         "createdAt": FieldValue.serverTimestamp(),
       });
     }
   }
 
   Stream<bool> isFavorite(String plantId) {
-    if (_uid == null) {
-      return Stream.value(false);
-    }
-
-    return _firestore
+    return _db
         .collection("users")
-        .doc(_uid)
+        .doc(uid)
         .collection("favorites")
         .doc(plantId)
         .snapshots()
-        .map((doc) => doc.exists);
+        .map((event) => event.exists);
   }
 }

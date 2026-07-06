@@ -1,21 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../add_plant/add_plant_screen.dart';
-import '../detail/plant_detail_screen.dart';
-import '../../services/favorite_service.dart';
+import 'all_plants_screen.dart';
 
-final FavoriteService favoriteService = FavoriteService();
-
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  String searchText = "";
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +13,7 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text("🌱 PlantMitra"),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
+        centerTitle: true,
       ),
 
       floatingActionButton: FloatingActionButton.extended(
@@ -46,88 +36,35 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           children: [
 
-            TextField(
-              decoration: InputDecoration(
-                hintText: "Search plants...",
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  searchText = value.toLowerCase();
-                });
-              },
+            _menuCard(
+              context,
+              title: "All Plants",
+              subtitle: "Browse all available plants",
+              icon: Icons.local_florist,
+              color: Colors.green,
+              isFree: null,
             ),
 
-            const SizedBox(height: 15),
+            const SizedBox(height: 16),
 
-            Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection("plants")
-                    .orderBy("createdAt", descending: true)
-                    .snapshots(),
-                builder: (context, snapshot) {
+            _menuCard(
+              context,
+              title: "Free Plants",
+              subtitle: "Plants available for free",
+              icon: Icons.card_giftcard,
+              color: Colors.blue,
+              isFree: true,
+            ),
 
-                  if (snapshot.connectionState ==
-                      ConnectionState.waiting) {
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  }
+            const SizedBox(height: 16),
 
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Text(snapshot.error.toString()),
-                    );
-                  }
-
-                  if (!snapshot.hasData ||
-                      snapshot.data!.docs.isEmpty) {
-                    return const Center(
-                      child: Text("No Plants Found"),
-                    );
-                  }
-
-                  final docs = snapshot.data!.docs.where((doc) {
-                    final data =
-                        doc.data() as Map<String, dynamic>;
-
-                    final name = (data["name"] ?? "")
-                        .toString()
-                        .toLowerCase();
-
-                    return name.contains(searchText);
-                  }).toList();
-
-                  return ListView.builder(
-                    itemCount: docs.length,
-                    itemBuilder: (context, index) {
-
-                      final plant =
-                          docs[index].data() as Map<String, dynamic>;
-
-                      return PlantCard(
-                        plantId: docs[index].id,
-                        plant: plant,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => PlantDetailScreen(
-                                documentId: docs[index].id,
-                                plant: plant,
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  );
-                },
-              ),
+            _menuCard(
+              context,
+              title: "Paid Plants",
+              subtitle: "Plants available for sale",
+              icon: Icons.currency_rupee,
+              color: Colors.orange,
+              isFree: false,
             ),
           ],
         ),
@@ -162,141 +99,76 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-}
-class PlantCard extends StatelessWidget {
-  final String plantId;
-  final Map<String, dynamic> plant;
-  final VoidCallback onTap;
 
-  const PlantCard({
-    super.key,
-    required this.plantId,
-    required this.plant,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final String name = plant["name"] ?? "Unknown Plant";
-    final String location = plant["location"] ?? "";
-    final String imageUrl = plant["imageUrl"] ?? "";
-    final bool isFree = plant["isFree"] ?? true;
-    final int price = (plant["price"] ?? 0) as int;
-
+  Widget _menuCard(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required bool? isFree,
+  }) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 15),
       elevation: 4,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(15),
-        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AllPlantsScreen(
+                isFree: isFree,
+                title: title,
+              ),
+            ),
+          );
+        },
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(20),
           child: Row(
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: imageUrl.isNotEmpty
-                    ? Image.network(
-                        imageUrl,
-                        width: 90,
-                        height: 90,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => Container(
-                          width: 90,
-                          height: 90,
-                          color: Colors.green.shade100,
-                          child: const Icon(
-                            Icons.eco,
-                            color: Colors.green,
-                            size: 40,
-                          ),
-                        ),
-                      )
-                    : Container(
-                        width: 90,
-                        height: 90,
-                        color: Colors.green.shade100,
-                        child: const Icon(
-                          Icons.eco,
-                          color: Colors.green,
-                          size: 40,
-                        ),
-                      ),
+
+              CircleAvatar(
+                radius: 30,
+                backgroundColor: color.withOpacity(.15),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: 32,
+                ),
               ),
 
-              const SizedBox(width: 15),
+              const SizedBox(width: 20),
 
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+
                     Text(
-                      name,
+                      title,
                       style: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 22,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 5),
 
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on,
-                          color: Colors.red,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(location),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            isFree ? Colors.green : Colors.orange,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        isFree ? "FREE" : "₹ $price",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: Colors.grey,
                       ),
                     ),
                   ],
                 ),
               ),
 
-              StreamBuilder<bool>(
-  stream: favoriteService.isFavorite(plantId),
-  builder: (context, snapshot) {
-    final isFavorite = snapshot.data ?? false;
-
-    return IconButton(
-      icon: Icon(
-        isFavorite ? Icons.favorite : Icons.favorite_border,
-        color: isFavorite ? Colors.red : Colors.grey,
-      ),
-      onPressed: () async {
-        await favoriteService.toggleFavorite(plantId);
-      },
-    );
-  },
-),
+              const Icon(Icons.arrow_forward_ios),
             ],
           ),
         ),
