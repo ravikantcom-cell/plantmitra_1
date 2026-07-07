@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../add_plant/add_plant_screen.dart';
 import 'all_plants_screen.dart';
 import '../favorites/favorite_screen.dart';
+import '../my_plants/my_plants_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -104,12 +105,13 @@ class HomeScreen extends StatelessWidget {
         break;
 
       case 3:
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Profile screen coming soon..."),
-          ),
-        );
-        break;
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const MyPlantsScreen(),
+    ),
+  );
+  break;
     }
   },
 
