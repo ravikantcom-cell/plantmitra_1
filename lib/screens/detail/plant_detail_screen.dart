@@ -1,12 +1,13 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-import '../edit_plant/edit_plant_screen.dart';
+import 'package:plantmitra/services/favorite_service.dart';
 import '../chat/chat_screen.dart';
+import '../edit_plant/edit_plant_screen.dart';
 
-class PlantDetailScreen extends StatelessWidget {
+class PlantDetailScreen extends StatefulWidget {
   final String documentId;
   final Map<String, dynamic> plant;
 
@@ -16,223 +17,217 @@ class PlantDetailScreen extends StatelessWidget {
     required this.plant,
   });
 
-  Future<void> deletePlant(BuildContext context) async {
-    final isOwner = FirebaseAuth.instance.currentUser?.uid == plant["ownerId"];
+  @override
+  State<PlantDetailScreen> createState() => _PlantDetailScreenState();
+}
 
+class _PlantDetailScreenState extends State<PlantDetailScreen> {
+  final FavoriteService favoriteService = FavoriteService();
+  bool isFavorite = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavoriteState();
+    _increaseView();
+  }
+
+  // ✅ FIX: Stream ko listen karein
+  Future<void> _loadFavoriteState() async {
+    try {
+      final isFav = await favoriteService.isFavorite(widget.documentId).first;
+      if (mounted) {
+        setState(() {
+          isFavorite = isFav;
+        });
+      }
+    } catch (e) {
+      print("Error loading favorite state: $e");
+    }
+  }
+
+  // ✅ FIX: Views badhayein
+  Future<void> _increaseView() async {
+    try {
+      await FirebaseFirestore.instance
+          .collection("plants")
+          .doc(widget.documentId)
+          .update({
+        "views": FieldValue.increment(1),
+      });
+
+      if (mounted) {
+        setState(() {
+          widget.plant["views"] = (widget.plant["views"] ?? 0) + 1;
+        });
+      }
+    } catch (e) {
+      print("Error updating views: $e");
+    }
+  }
+
+  Future<void> toggleFavorite() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      Fluttertoast.showToast(msg: "Please login to favorite");
+      return;
+    }
+
+    final uid = user.uid;
+    final plantRef = FirebaseFirestore.instance.collection("plants").doc(widget.documentId);
+    final favRef = FirebaseFirestore.instance.collection("users").doc(uid).collection("favorites").doc(widget.documentId);
+    final favDoc = await favRef.get();
+
+    try {
+      if (favDoc.exists) {
+        // Unfavorite
+        await favRef.delete();
+        await plantRef.update({"favoriteCount": FieldValue.increment(-1)});
+        if (mounted) {
+          setState(() {
+            isFavorite = false;
+            widget.plant["favoriteCount"] = (widget.plant["favoriteCount"] ?? 1) - 1;
+          });
+          Fluttertoast.showToast(msg: "Removed from favorites", toastLength: Toast.LENGTH_SHORT);
+        }
+      } else {
+        // Favorite
+        await favRef.set({"createdAt": FieldValue.serverTimestamp()});
+        await plantRef.update({"favoriteCount": FieldValue.increment(1)});
+        if (mounted) {
+          setState(() {
+            isFavorite = true;
+            widget.plant["favoriteCount"] = (widget.plant["favoriteCount"] ?? 0) + 1;
+          });
+          Fluttertoast.showToast(msg: "Added to favorites! ❤️", toastLength: Toast.LENGTH_SHORT);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Fluttertoast.showToast(msg: "Failed to update favorite");
+      }
+    }
+  }
+
+  Future<void> deletePlant() async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Delete Plant"),
-          content: const Text(
-            "Are you sure you want to delete this plant?",
+      builder: (context) => AlertDialog(
+        title: const Text("Delete Plant"),
+        content: const Text("Are you sure you want to delete this plant?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text("Cancel"),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text("Delete"),
-            ),
-            // Chat button is only shown if NOT the owner
-            if (!isOwner)
-              const SizedBox(height: 15), // Spacing
-            if (!isOwner)
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                  ),
-                  icon: const Icon(Icons.chat),
-                  label: const Text(
-                    "Chat with Owner",
-                    style: TextStyle(fontSize: 17),
-                  ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ChatScreen(
-  plantId: documentId,
-  receiverId: plant["ownerId"],
-  receiverName: plant["name"] ?? "",
-),
-                      ),
-                    );
-                  },
-                ),
-              ),
-          ],
-        );
-      },
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Delete"),
+          ),
+        ],
+      ),
     );
 
     if (confirm != true) return;
 
     try {
-      await FirebaseFirestore.instance
-          .collection("plants")
-          .doc(documentId)
-          .delete();
-
-      Fluttertoast.showToast(
-        msg: "Plant Deleted Successfully",
-      );
-
-      if (context.mounted) {
+      await FirebaseFirestore.instance.collection("plants").doc(widget.documentId).delete();
+      if (mounted) {
+        Fluttertoast.showToast(msg: "Plant Deleted Successfully", backgroundColor: Colors.green);
         Navigator.pop(context);
       }
     } catch (e) {
-      Fluttertoast.showToast(msg: "Error: $e");
+      if (mounted) {
+        Fluttertoast.showToast(msg: e.toString());
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-    final bool isOwner = user != null && user.uid == plant["ownerId"];
+    final isOwner = user != null && user.uid == widget.plant["ownerId"];
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(plant["name"] ?? "Plant"),
+        title: Text(widget.plant["name"] ?? "Plant"),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: Icon(
+              isFavorite ? Icons.favorite : Icons.favorite_border,
+              color: Colors.red,
+            ),
+            onPressed: toggleFavorite,
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// IMAGE
             Container(
               width: double.infinity,
               height: 260,
               color: Colors.green.shade100,
-              child: (plant["imageUrl"] ?? "").toString().isNotEmpty
+              child: (widget.plant["imageUrl"] ?? "").toString().isNotEmpty
                   ? Image.network(
-                      plant["imageUrl"],
+                      widget.plant["imageUrl"],
                       fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) {
-                        return const Center(
-                          child: Icon(
-                            Icons.local_florist,
-                            size: 120,
-                            color: Colors.green,
-                          ),
-                        );
-                      },
+                      errorBuilder: (_, __, ___) => const Center(
+                        child: Icon(Icons.local_florist, size: 120, color: Colors.green),
+                      ),
                     )
                   : const Center(
-                      child: Icon(
-                        Icons.local_florist,
-                        size: 120,
-                        color: Colors.green,
-                      ),
+                      child: Icon(Icons.local_florist, size: 120, color: Colors.green),
                     ),
             ),
+
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-  plant["name"] ?? "",
-  style: const TextStyle(
-    fontSize: 28,
-    fontWeight: FontWeight.bold,
-  ),
-),
+                    widget.plant["name"] ?? "",
+                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                  ),
+                  if ((widget.plant["scientificName"] ?? "").toString().isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 5),
+                      child: Text(
+                        widget.plant["scientificName"],
+                        style: TextStyle(fontSize: 17, color: Colors.grey.shade700, fontStyle: FontStyle.italic),
+                      ),
+                    ),
 
-if ((plant["scientificName"] ?? "").toString().isNotEmpty)
-  Padding(
-    padding: const EdgeInsets.only(top: 5),
-    child: Text(
-      plant["scientificName"],
-      style: TextStyle(
-        fontSize: 17,
-        color: Colors.grey.shade700,
-        fontStyle: FontStyle.italic,
-      ),
-    ),
-  ),
+                  const SizedBox(height: 20),
 
-const SizedBox(height: 15),
                   Row(
                     children: [
-                      const Icon(
-                        Icons.location_on,
-                        color: Colors.red,
-                      ),
+                      const Icon(Icons.location_on, color: Colors.red),
                       const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          plant["location"] ?? "",
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      ),
+                      Expanded(child: Text(widget.plant["location"] ?? "")),
                     ],
                   ),
+
                   const SizedBox(height: 20),
-                  const Text(
-                    "Description",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.category, color: Colors.green),
+                      title: Text("Category : ${widget.plant["category"] ?? "-"}"),
+                      subtitle: Text("Sub Category : ${widget.plant["subCategory"] ?? "-"}"),
                     ),
                   ),
-                  Card(
-  elevation: 2,
-  shape: RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(12),
-  ),
-  child: Padding(
-    padding: const EdgeInsets.all(15),
-    child: Column(
-      children: [
 
-        Row(
-          children: [
-            const Icon(Icons.category,color: Colors.green),
-            const SizedBox(width:10),
-            Expanded(
-              child: Text(
-                "Category : ${plant["category"] ?? "-"}",
-                style: const TextStyle(fontSize:16),
-              ),
-            ),
-          ],
-        ),
+                  const SizedBox(height: 20),
 
-        const SizedBox(height:12),
-
-        Row(
-          children: [
-            const Icon(Icons.eco,color: Colors.orange),
-            const SizedBox(width:10),
-            Expanded(
-              child: Text(
-                "Sub Category : ${plant["subCategory"] ?? "-"}",
-                style: const TextStyle(fontSize:16),
-              ),
-            ),
-          ],
-        ),
-
-      ],
-    ),
-  ),
-),
-
-const SizedBox(height:20),
+                  const Text("Description", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 10),
+
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(15),
@@ -240,138 +235,102 @@ const SizedBox(height:20),
                       color: Colors.green.shade50,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(
-                      plant["description"] ?? "No description available.",
-                      style: const TextStyle(fontSize: 16),
-                    ),
+                    child: Text(widget.plant["description"] ?? "No description"),
                   ),
+
                   const SizedBox(height: 25),
+
                   Row(
                     children: [
-                      const Text(
-                        "Price : ",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      const Text("Price : ", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                       Text(
-                        plant["isFree"] == true
-                            ? "FREE 🌱"
-                            : "₹ ${plant["price"]}",
+                        widget.plant["isFree"] == true ? "FREE 🌱" : "₹ ${widget.plant["price"]}",
                         style: TextStyle(
-                          fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: plant["isFree"] == true
-                              ? Colors.green
-                              : Colors.orange,
+                          fontSize: 18,
+                          color: widget.plant["isFree"] == true ? Colors.green : Colors.orange,
                         ),
+                      )
+                    ],
+                  ),
+
+                  const SizedBox(height: 25),
+
+                  Card(
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: Colors.green,
+                        backgroundImage: (widget.plant["ownerPhoto"] ?? "").toString().isNotEmpty
+                            ? NetworkImage(widget.plant["ownerPhoto"])
+                            : null,
+                        child: (widget.plant["ownerPhoto"] ?? "").toString().isEmpty
+                            ? const Icon(Icons.person, color: Colors.white)
+                            : null,
+                      ),
+                      title: Text(widget.plant["ownerName"] ?? ""),
+                      subtitle: Text(widget.plant["ownerEmail"] ?? ""),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Column(
+                        children: [
+                          const Icon(Icons.favorite, color: Colors.red),
+                          Text("${widget.plant["favoriteCount"] ?? 0}"),
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          const Icon(Icons.chat, color: Colors.blue),
+                          Text("${widget.plant["chatCount"] ?? 0}"),
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          const Icon(Icons.visibility, color: Colors.green),
+                          Text("${widget.plant["views"] ?? 0}"),
+                        ],
                       ),
                     ],
                   ),
+
                   const SizedBox(height: 25),
-                  Card(
-  elevation: 2,
-  shape: RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(12),
-  ),
-  child: ListTile(
-    leading: CircleAvatar(
-      backgroundColor: Colors.green,
-      backgroundImage:
-          (plant["ownerPhoto"] ?? "").toString().isNotEmpty
-              ? NetworkImage(plant["ownerPhoto"])
-              : null,
-      child: (plant["ownerPhoto"] ?? "").toString().isEmpty
-          ? const Icon(Icons.person,color: Colors.white)
-          : null,
-    ),
-    title: Text(
-      plant["ownerName"] ?? "Unknown",
-      style: const TextStyle(
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-    subtitle: Text(
-      plant["ownerEmail"] ?? "",
-    ),
-  ),
-),
 
-const SizedBox(height:20),
-Row(
-  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-  children: [
-
-    Column(
-      children: [
-        const Icon(Icons.favorite,color: Colors.red),
-        const SizedBox(height:4),
-        Text("${plant["favoriteCount"] ?? 0}"),
-      ],
-    ),
-
-    Column(
-      children: [
-        const Icon(Icons.chat,color: Colors.blue),
-        const SizedBox(height:4),
-        Text("${plant["chatCount"] ?? 0}"),
-      ],
-    ),
-
-    Column(
-      children: [
-        const Icon(Icons.visibility,color: Colors.green),
-        const SizedBox(height:4),
-        Text("${plant["views"] ?? 0}"),
-      ],
-    ),
-
-  ],
-),
-
-const SizedBox(height:25),
-                  // Chat button (only for other user's plants)
                   if (!isOwner)
                     SizedBox(
                       width: double.infinity,
                       height: 55,
                       child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                        ),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
                         icon: const Icon(Icons.chat),
-                        label: const Text(
-                          "Chat with Owner",
-                          style: TextStyle(fontSize: 18),
-                        ),
+                        label: const Text("Chat with Owner"),
                         onPressed: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) => ChatScreen(
-  plantId: documentId,
-  receiverId: plant["ownerId"],
-  receiverName: plant["name"] ?? "",
-),
+                                plantId: widget.documentId,
+                                receiverId: widget.plant["ownerId"],
+                                receiverName: widget.plant["ownerName"] ?? "",
+                              ),
                             ),
                           );
                         },
                       ),
                     ),
 
-                  const SizedBox(height: 35),
+                  const SizedBox(height: 25),
+
                   if (isOwner)
                     Row(
                       children: [
                         Expanded(
                           child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size.fromHeight(50),
-                            ),
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
                             icon: const Icon(Icons.edit),
                             label: const Text("Edit"),
                             onPressed: () {
@@ -379,8 +338,8 @@ const SizedBox(height:25),
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => EditPlantScreen(
-                                    documentId: documentId,
-                                    plant: plant,
+                                    documentId: widget.documentId,
+                                    plant: widget.plant,
                                   ),
                                 ),
                               );
@@ -390,16 +349,10 @@ const SizedBox(height:25),
                         const SizedBox(width: 15),
                         Expanded(
                           child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size.fromHeight(50),
-                            ),
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
                             icon: const Icon(Icons.delete),
                             label: const Text("Delete"),
-                            onPressed: () {
-                              deletePlant(context);
-                            },
+                            onPressed: deletePlant,
                           ),
                         ),
                       ],
