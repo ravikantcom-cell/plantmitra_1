@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../add_plant/add_plant_screen.dart';
 import 'all_plants_screen.dart';
+import '../favorites/favorite_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -70,35 +71,75 @@ class HomeScreen extends StatelessWidget {
         ),
       ),
 
+      
+
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        selectedItemColor: Colors.green,
-        type: BottomNavigationBarType.fixed,
-        items: const [
+  currentIndex: 0,
+  selectedItemColor: Colors.green,
+  type: BottomNavigationBarType.fixed,
 
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: "Home",
-          ),
+  onTap: (index) {
 
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: "Favorites",
-          ),
+    switch (index) {
 
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat),
-            label: "Chat",
-          ),
+      case 0:
+        // Already Home
+        break;
 
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: "Profile",
+      case 1:
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const FavoriteScreen(),
           ),
-        ],
-      ),
+        );
+        break;
+
+      case 2:
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Chat screen coming soon..."),
+          ),
+        );
+        break;
+
+      case 3:
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Profile screen coming soon..."),
+          ),
+        );
+        break;
+    }
+  },
+
+  items: const [
+
+    BottomNavigationBarItem(
+      icon: Icon(Icons.home),
+      label: "Home",
+    ),
+
+    BottomNavigationBarItem(
+      icon: Icon(Icons.favorite),
+      label: "Favorites",
+    ),
+
+    BottomNavigationBarItem(
+      icon: Icon(Icons.chat),
+      label: "Chat",
+    ),
+
+    BottomNavigationBarItem(
+      icon: Icon(Icons.person),
+      label: "Profile",
+    ),
+
+  ],
+),
     );
   }
+  
 
   Widget _menuCard(
     BuildContext context, {
