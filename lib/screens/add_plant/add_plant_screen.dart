@@ -29,6 +29,14 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
   File? selectedImage;
   bool isUploading = false;
   bool isFree = true;
+  String selectedItemType = "Plant";
+
+final List<String> itemTypes = [
+  "Plant",
+  "Seed",
+  "Cutting",
+  "Sapling",
+];
   List<Map<String, dynamic>> masterPlants = [];
   Map<String, dynamic>? selectedPlant;
 
@@ -167,6 +175,7 @@ String imageUrl = await uploadImage();
         "scientificName": selectedPlant!["scientificName"],
         "category": selectedPlant!["category"],
         "subCategory": selectedPlant!["subCategory"],
+        "itemType": selectedItemType,
         "description": descriptionController.text.trim(),
         "location": locationController.text.trim(),
         "imageUrl": imageUrl,
@@ -273,6 +282,32 @@ String imageUrl = await uploadImage();
 ),
 
 const SizedBox(height: 20),
+DropdownButtonFormField<String>(
+  value: selectedItemType,
+  decoration: InputDecoration(
+    labelText: "Item Type",
+    prefixIcon: const Icon(
+      Icons.category,
+      color: Colors.green,
+    ),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+    filled: true,
+    fillColor: Colors.grey.shade50,
+  ),
+  items: itemTypes.map((item) {
+    return DropdownMenuItem(
+      value: item,
+      child: Text(item),
+    );
+  }).toList(),
+  onChanged: (value) {
+    setState(() {
+      selectedItemType = value!;
+    });
+  },
+),
             // Plant Name Autocomplete
             DropdownSearch<Map<String, dynamic>>(
   items: (filter, infiniteScrollProps) => masterPlants,

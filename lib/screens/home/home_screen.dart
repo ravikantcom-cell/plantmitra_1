@@ -17,7 +17,6 @@ class HomeScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         centerTitle: true,
       ),
-
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
@@ -32,117 +31,147 @@ class HomeScreen extends StatelessWidget {
           );
         },
       ),
-
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-
-            _menuCard(
-              context,
-              title: "All Plants",
-              subtitle: "Browse all available plants",
-              icon: Icons.local_florist,
-              color: Colors.green,
-              isFree: null,
+            // All Section
+            ExpansionTile(
+              leading: const Icon(Icons.local_florist, color: Colors.green),
+              title: const Text(
+                "All",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              children: [
+                _typeButton(context, "Plants", null, "Plant"),
+                _typeButton(context, "Seeds", null, "Seed"),
+                _typeButton(context, "Cuttings", null, "Cutting"),
+                _typeButton(context, "Saplings", null, "Sapling"),
+              ],
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
-            _menuCard(
-              context,
-              title: "Free Plants",
-              subtitle: "Plants available for free",
-              icon: Icons.card_giftcard,
-              color: Colors.blue,
-              isFree: true,
+            // Free Section
+            ExpansionTile(
+              leading: const Icon(Icons.card_giftcard, color: Colors.blue),
+              title: const Text(
+                "Free",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              children: [
+                _typeButton(context, "Plants", true, "Plant"),
+                _typeButton(context, "Seeds", true, "Seed"),
+                _typeButton(context, "Cuttings", true, "Cutting"),
+                _typeButton(context, "Saplings", true, "Sapling"),
+              ],
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
-            _menuCard(
-              context,
-              title: "Paid Plants",
-              subtitle: "Plants available for sale",
-              icon: Icons.currency_rupee,
-              color: Colors.orange,
-              isFree: false,
+            // Paid Section
+            ExpansionTile(
+              leading: const Icon(Icons.currency_rupee, color: Colors.orange),
+              title: const Text(
+                "Paid",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              children: [
+                _typeButton(context, "Plants", false, "Plant"),
+                _typeButton(context, "Seeds", false, "Seed"),
+                _typeButton(context, "Cuttings", false, "Cutting"),
+                _typeButton(context, "Saplings", false, "Sapling"),
+              ],
             ),
           ],
         ),
       ),
-
-      
-
       bottomNavigationBar: BottomNavigationBar(
-  currentIndex: 0,
-  selectedItemColor: Colors.green,
-  type: BottomNavigationBarType.fixed,
+        currentIndex: 0,
+        selectedItemColor: Colors.green,
+        type: BottomNavigationBarType.fixed,
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              // Already Home
+              break;
+            case 1:
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const FavoriteScreen(),
+                ),
+              );
+              break;
+            case 2:
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("Chat screen coming soon..."),
+                ),
+              );
+              break;
+            case 3:
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const MyPlantsScreen(),
+                ),
+              );
+              break;
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: "Home",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite),
+            label: "Favorites",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat),
+            label: "Chat",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: "Profile",
+          ),
+        ],
+      ),
+    );
+  }
 
-  onTap: (index) {
-
-    switch (index) {
-
-      case 0:
-        // Already Home
-        break;
-
-      case 1:
+  Widget _typeButton(
+    BuildContext context,
+    String title,
+    bool? isFree,
+    String itemType,
+  ) {
+    return ListTile(
+      leading: const Icon(
+        Icons.arrow_right,
+        color: Colors.green,
+      ),
+      title: Text(title),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => const FavoriteScreen(),
-          ),
-        );
-        break;
-
-      case 2:
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Chat screen coming soon..."),
-          ),
-        );
-        break;
-
-      case 3:
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => const MyPlantsScreen(),
-    ),
-  );
-  break;
-    }
-  },
-
-  items: const [
-
-    BottomNavigationBarItem(
-      icon: Icon(Icons.home),
-      label: "Home",
-    ),
-
-    BottomNavigationBarItem(
-      icon: Icon(Icons.favorite),
-      label: "Favorites",
-    ),
-
-    BottomNavigationBarItem(
-      icon: Icon(Icons.chat),
-      label: "Chat",
-    ),
-
-    BottomNavigationBarItem(
-      icon: Icon(Icons.person),
-      label: "Profile",
-    ),
-
-  ],
+            builder: (_) => AllPlantsScreen(
+  title:
+      "${isFree == null ? "All" : isFree ? "Free" : "Paid"} $title",
+  isFree: isFree,
+  itemType: itemType,
 ),
+          ),
+        );
+      },
     );
   }
-  
 
+  // Optional: Keep this method if you plan to use _menuCard later
   Widget _menuCard(
     BuildContext context, {
     required String title,
@@ -173,7 +202,6 @@ class HomeScreen extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           child: Row(
             children: [
-
               CircleAvatar(
                 radius: 30,
                 backgroundColor: color.withOpacity(.15),
@@ -183,14 +211,11 @@ class HomeScreen extends StatelessWidget {
                   size: 32,
                 ),
               ),
-
               const SizedBox(width: 20),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
                     Text(
                       title,
                       style: const TextStyle(
@@ -198,9 +223,7 @@ class HomeScreen extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     const SizedBox(height: 5),
-
                     Text(
                       subtitle,
                       style: const TextStyle(
@@ -210,7 +233,6 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
               ),
-
               const Icon(Icons.arrow_forward_ios),
             ],
           ),
