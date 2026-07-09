@@ -1,28 +1,226 @@
 import 'package:flutter/material.dart';
+import 'package:plantmitra_1/services/plant_count_service.dart';
+import 'package:plantmitra_1/services/plant_master_service.dart';
+import 'package:plantmitra_1/screens/home/all_plants_screen.dart';
+import 'package:plantmitra_1/screens/add_plant/add_plant_screen.dart';
+import 'package:plantmitra_1/screens/favorites/favorite_screen.dart';
+import 'package:plantmitra_1/screens/chat/chat_list_screen.dart';
+import 'package:plantmitra_1/screens/profile/profile_screen.dart';
 
-import '../add_plant/add_plant_screen.dart';
-import 'all_plants_screen.dart';
-import '../favorites/favorite_screen.dart';
-import '../my_plants/my_plants_screen.dart';
-
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final PlantCountService _countService = PlantCountService();
+  final PlantMasterService _masterService = PlantMasterService.instance;
+  Map<String, int> _counts = {};
+  bool _isLoading = true;
+  int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    try {
+      // Load master plants first
+      await _masterService.loadPlants();
+      print("Master plants loaded: ${_masterService.plants.length}");
+      
+      // Load counts
+      final counts = await _countService.getAllCounts();
+      setState(() {
+        _counts = counts;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print("Error loading data: $e");
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadCounts() async {
+    setState(() => _isLoading = true);
+    try {
+      final counts = await _countService.getAllCounts();
+      setState(() {
+        _counts = counts;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final totalCount = _counts['total'] ?? 0;
+    final freeCount = _counts['free'] ?? 0;
+    final forSaleCount = _counts['forSale'] ?? 0;
+
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text("🌱 PlantMitra"),
+        title: const Text(
+          'PlantMitra',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
-        centerTitle: true,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              // Navigate to search screen
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () {
+              // Navigate to notifications
+            },
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: _loadCounts,
+        child: _isLoading
+            ? const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      color: Colors.green,
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'Loading...',
+                      style: TextStyle(
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Section 1: All Plants
+                    _buildSectionCard(
+                      title: 'All Plants ($totalCount)',
+                      subtitle: 'Browse all listings',
+                      icon: Icons.local_florist,
+                      iconColor: Colors.green,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AllPlantsScreen(
+                              title: 'All Plants',
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Section 2: Free Plants
+                    _buildSectionCard(
+                      title: 'Free Plants ($freeCount)',
+                      subtitle: 'Browse all listings',
+                      icon: Icons.volunteer_activism,
+                      iconColor: Colors.green,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AllPlantsScreen(
+                              title: 'Free Plants',
+                              isFree: true,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Section 3: Plants for Sale
+                    _buildSectionCard(
+                      title: 'Plants for sale ($forSaleCount)',
+                      subtitle: 'Browse all listings',
+                      icon: Icons.attach_money,
+                      iconColor: Colors.orange,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AllPlantsScreen(
+                              title: 'Plants for Sale',
+                              isFree: false,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 30),
+
+                    // Quick Stats
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.shade200,
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildStatItem(
+                            'Total',
+                            totalCount.toString(),
+                            Icons.local_florist,
+                            Colors.green,
+                          ),
+                          _buildStatItem(
+                            'Free',
+                            freeCount.toString(),
+                            Icons.volunteer_activism,
+                            Colors.green,
+                          ),
+                          _buildStatItem(
+                            'For Sale',
+                            forSaleCount.toString(),
+                            Icons.attach_money,
+                            Colors.orange,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text("Add Plant"),
         onPressed: () {
+          // Navigate to Add Plant Screen
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -30,188 +228,48 @@ class HomeScreen extends StatelessWidget {
             ),
           );
         },
+        icon: const Icon(Icons.add),
+        label: const Text('Add Plant'),
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // All Section
-            ExpansionTile(
-              leading: const Icon(Icons.local_florist, color: Colors.green),
-              title: const Text(
-                "All",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              children: [
-                _typeButton(context, "Plants", null, "Plant"),
-                _typeButton(context, "Seeds", null, "Seed"),
-                _typeButton(context, "Cuttings", null, "Cutting"),
-                _typeButton(context, "Saplings", null, "Sapling"),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            // Free Section
-            ExpansionTile(
-              leading: const Icon(Icons.card_giftcard, color: Colors.blue),
-              title: const Text(
-                "Free",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              children: [
-                _typeButton(context, "Plants", true, "Plant"),
-                _typeButton(context, "Seeds", true, "Seed"),
-                _typeButton(context, "Cuttings", true, "Cutting"),
-                _typeButton(context, "Saplings", true, "Sapling"),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            // Paid Section
-            ExpansionTile(
-              leading: const Icon(Icons.currency_rupee, color: Colors.orange),
-              title: const Text(
-                "Paid",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              children: [
-                _typeButton(context, "Plants", false, "Plant"),
-                _typeButton(context, "Seeds", false, "Seed"),
-                _typeButton(context, "Cuttings", false, "Cutting"),
-                _typeButton(context, "Saplings", false, "Sapling"),
-              ],
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        selectedItemColor: Colors.green,
-        type: BottomNavigationBarType.fixed,
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              // Already Home
-              break;
-            case 1:
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const FavoriteScreen(),
-                ),
-              );
-              break;
-            case 2:
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Chat screen coming soon..."),
-                ),
-              );
-              break;
-            case 3:
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const MyPlantsScreen(),
-                ),
-              );
-              break;
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: "Home",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: "Favorites",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat),
-            label: "Chat",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: "Profile",
-          ),
-        ],
-      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
-  Widget _typeButton(
-    BuildContext context,
-    String title,
-    bool? isFree,
-    String itemType,
-  ) {
-    return ListTile(
-      leading: const Icon(
-        Icons.arrow_right,
-        color: Colors.green,
-      ),
-      title: Text(title),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => AllPlantsScreen(
-  title:
-      "${isFree == null ? "All" : isFree ? "Free" : "Paid"} $title",
-  isFree: isFree,
-  itemType: itemType,
-),
-          ),
-        );
-      },
-    );
-  }
-
-  // Optional: Keep this method if you plan to use _menuCard later
-  Widget _menuCard(
-    BuildContext context, {
+  Widget _buildSectionCard({
     required String title,
     required String subtitle,
     required IconData icon,
-    required Color color,
-    required bool? isFree,
+    required Color iconColor,
+    required VoidCallback onTap,
   }) {
     return Card(
-      elevation: 4,
+      elevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(15),
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AllPlantsScreen(
-                isFree: isFree,
-                title: title,
-              ),
-            ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(20),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(15),
+        child: Container(
+          padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 30,
-                backgroundColor: color.withOpacity(.15),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: iconColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: Icon(
                   icon,
-                  color: color,
-                  size: 32,
+                  color: iconColor,
+                  size: 28,
                 ),
               ),
-              const SizedBox(width: 20),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,25 +277,117 @@ class HomeScreen extends StatelessWidget {
                     Text(
                       title,
                       style: const TextStyle(
-                        fontSize: 22,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 5),
                     Text(
                       subtitle,
-                      style: const TextStyle(
-                        color: Colors.grey,
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 14,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios),
+              Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.grey.shade400,
+                size: 16,
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, IconData icon, Color color) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 24),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey.shade600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBottomNavigationBar() {
+    return BottomNavigationBar(
+      type: BottomNavigationBarType.fixed,
+      backgroundColor: Colors.white,
+      selectedItemColor: Colors.green,
+      unselectedItemColor: Colors.grey,
+      selectedLabelStyle: const TextStyle(
+        fontWeight: FontWeight.bold,
+      ),
+      currentIndex: _selectedIndex,
+      onTap: (index) {
+        setState(() {
+          _selectedIndex = index;
+        });
+        switch (index) {
+          case 0:
+            // Already on Home
+            break;
+          case 1:
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const FavoriteScreen(),
+              ),
+            );
+            break;
+          case 2:
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const ChatListScreen(),
+              ),
+            );
+            break;
+          case 3:
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const ProfileScreen(),
+              ),
+            );
+            break;
+        }
+      },
+      items: const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home),
+          label: 'Home',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.favorite_border),
+          label: 'Favorites',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.chat_bubble_outline),
+          label: 'Chat',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person_outline),
+          label: 'Profile',
+        ),
+      ],
     );
   }
 }

@@ -17,12 +17,10 @@ class AddPlantScreen extends StatefulWidget {
 }
 
 class _AddPlantScreenState extends State<AddPlantScreen> {
-  // --- Firebase ---
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final FirebaseStorage storage = FirebaseStorage.instance;
   final FirebaseAuth auth = FirebaseAuth.instance;
 
-  // --- Form & UI ---
   final _formKey = GlobalKey<FormState>();
   final ImagePicker picker = ImagePicker();
 
@@ -31,17 +29,18 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
   bool isFree = true;
   String selectedItemType = "Plant";
 
-final List<String> itemTypes = [
-  "Plant",
-  "Seed",
-  "Cutting",
-  "Sapling",
-];
+  final List<String> itemTypes = [
+    "Plant",
+    "Seed",
+    "Cutting",
+    "Sapling",
+  ];
+  
   List<Map<String, dynamic>> masterPlants = [];
   Map<String, dynamic>? selectedPlant;
+  bool isLoadingPlants = true;
+  String errorMessage = '';
 
-  // --- Controllers ---
-  final TextEditingController plantController = TextEditingController();
   final TextEditingController locationController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController priceController = TextEditingController();
@@ -53,44 +52,72 @@ final List<String> itemTypes = [
   }
 
   Future<void> loadPlants() async {
-    debugPrint("loadPlants() STARTED");
+    setState(() {
+      isLoadingPlants = true;
+      errorMessage = '';
+    });
+    
     try {
+      print("🔄 Loading plant_master from Firebase...");
+      
+      // Simple query - no orderBy or where to avoid index issues
       final snapshot = await firestore
-    .collection("plant_master")
-    .get();
+          .collection("plant_master")
+          .get();
 
-          debugPrint("Documents = ${snapshot.docs.length}");
+      print("📊 Total plant_master documents: ${snapshot.docs.length}");
 
-      masterPlants = snapshot.docs
-    .map((e) => {"id": e.id, ...e.data()})
-    .toList();
-    masterPlants.sort(
-  (a, b) => a["name"].toString().compareTo(
-        b["name"].toString(),
-      ),
-);
+      if (snapshot.docs.isEmpty) {
+        print("⚠️ No documents found in plant_master collection!");
+        setState(() {
+          errorMessage = "No plants found in master list";
+          isLoadingPlants = false;
+        });
+        return;
+      }
 
-setState(() {});
+      masterPlants = snapshot.docs.map((e) {
+        final data = e.data();
+        print("🌱 Plant: ${e.id} - ${data['name']}");
+        
+        return {
+          "id": e.id,
+          "name": data["name"]?.toString() ?? "",
+          "scientificName": data["scientificName"]?.toString() ?? "",
+          "category": data["category"]?.toString() ?? "",
+          "subCategory": data["subCategory"]?.toString() ?? "",
+          "active": data["active"] ?? true,
+        };
+      }).toList();
 
-debugPrint("Plants Loaded: ${masterPlants.length}");
-debugPrint(masterPlants.toString());
-if (masterPlants.isNotEmpty) {
-  debugPrint(masterPlants.first.toString());
-}
+      // Filter active plants and sort in memory
+      masterPlants = masterPlants
+          .where((plant) => plant["active"] == true)
+          .toList();
+      
+      masterPlants.sort((a, b) => 
+          a["name"].toString().compareTo(b["name"].toString())
+      );
 
-if (mounted) {
-  setState(() {});
-}
-   } catch (e, stack) {
-  print("================================");
-  print("ERROR TYPE : ${e.runtimeType}");
-  print("ERROR      : $e");
-  print("STACK");
-  print(stack);
-  print("================================");
+      print("✅ Loaded ${masterPlants.length} active plants successfully");
+      
+      if (mounted) {
+        setState(() {
+          isLoadingPlants = false;
+        });
+      }
+    } catch (e) {
+      print("❌ Error loading plants: $e");
+      setState(() {
+        errorMessage = "Error loading plants. Please try again.";
+        isLoadingPlants = false;
+      });
+      if (mounted) {
+        Fluttertoast.showToast(msg: "Error loading plants: $e");
+      }
+    }
+  }
 
-  Fluttertoast.showToast(msg: "$e");
-}  }
   Future<void> pickImage() async {
     try {
       final XFile? image = await picker.pickImage(
@@ -104,44 +131,54 @@ if (mounted) {
         });
       }
     } catch (e) {
-      Fluttertoast.showToast(msg: "Failed to pick image: $e");
+      if (mounted) {
+        Fluttertoast.showToast(msg: "Failed to pick image: $e");
+      }
     }
   }
 
-  
+  Future<String> uploadImage() async {
+    if (selectedImage == null) return "";
 
-   Future<String> uploadImage() async {
-  // Temporary
-  // Firebase Storage use nahi karenge
-
-  if (selectedImage == null) {
-    return "";
+    try {
+      final String fileName = '${DateTime.now().millisecondsSinceEpoch}_${const Uuid().v4()}.jpg';
+      final Reference ref = storage.ref().child('plant_images/$fileName');
+      
+      final UploadTask uploadTask = ref.putFile(selectedImage!);
+      final TaskSnapshot snapshot = await uploadTask;
+      final String downloadUrl = await snapshot.ref.getDownloadURL();
+      return downloadUrl;
+    } catch (e) {
+      print("Upload error: $e");
+      return "";
+    }
   }
 
-  debugPrint("Image selected but upload skipped.");
-
-  return "";
-}
-
   Future<void> submitPlant() async {
-    print("Selected Plant = ${selectedPlant?["name"]}");
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      Fluttertoast.showToast(msg: "Please fill all required fields");
+      return;
+    }
 
     if (selectedPlant == null) {
       Fluttertoast.showToast(msg: "Please select a plant from the list");
       return;
     }
 
-   
+    if (locationController.text.trim().isEmpty) {
+      Fluttertoast.showToast(msg: "Please enter location");
+      return;
+    }
+
+    if (!isFree && priceController.text.trim().isEmpty) {
+      Fluttertoast.showToast(msg: "Please enter price");
+      return;
+    }
 
     try {
-      setState(() {
-        isUploading = true;
-      });
+      setState(() => isUploading = true);
 
-      // 1. Upload Image
-      // 1. Upload Image (Optional)
-String imageUrl = await uploadImage();
+      String imageUrl = await uploadImage();
 
       final user = auth.currentUser;
       if (user == null) {
@@ -150,17 +187,10 @@ String imageUrl = await uploadImage();
         return;
       }
 
-      // 2. Parse Price Safely
       double priceValue = 0.0;
       if (!isFree) {
-        final priceStr = priceController.text.trim();
-        if (priceStr.isEmpty) {
-          Fluttertoast.showToast(msg: "Enter a valid price");
-          setState(() => isUploading = false);
-          return;
-        }
         try {
-          priceValue = double.parse(priceStr);
+          priceValue = double.parse(priceController.text.trim());
         } catch (e) {
           Fluttertoast.showToast(msg: "Price must be a number");
           setState(() => isUploading = false);
@@ -168,19 +198,18 @@ String imageUrl = await uploadImage();
         }
       }
 
-      // 3. Add to Firestore
-      await firestore.collection("plants").add({
+      final plantData = {
         "masterPlantId": selectedPlant!["id"],
         "name": selectedPlant!["name"],
-        "scientificName": selectedPlant!["scientificName"],
-        "category": selectedPlant!["category"],
-        "subCategory": selectedPlant!["subCategory"],
+        "scientificName": selectedPlant!["scientificName"] ?? "",
+        "category": selectedPlant!["category"] ?? "",
+        "subCategory": selectedPlant!["subCategory"] ?? "",
         "itemType": selectedItemType,
         "description": descriptionController.text.trim(),
         "location": locationController.text.trim(),
         "imageUrl": imageUrl,
         "isFree": isFree,
-        "price": isFree ? 0 : priceValue, // Using double for flexibility
+        "price": isFree ? 0 : priceValue,
         "ownerId": user.uid,
         "ownerName": user.displayName ?? "",
         "ownerEmail": user.email ?? "",
@@ -191,10 +220,16 @@ String imageUrl = await uploadImage();
         "status": "Available",
         "createdAt": FieldValue.serverTimestamp(),
         "updatedAt": FieldValue.serverTimestamp(),
-      });
+      };
+
+      await firestore.collection("plants").add(plantData);
 
       if (mounted) {
-        Fluttertoast.showToast(msg: "Plant Added Successfully 🌱", backgroundColor: Colors.green);
+        Fluttertoast.showToast(
+          msg: "Plant Added Successfully 🌱",
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+        );
         Navigator.pop(context);
       }
     } catch (e) {
@@ -204,16 +239,13 @@ String imageUrl = await uploadImage();
       }
     } finally {
       if (mounted) {
-        setState(() {
-          isUploading = false;
-        });
+        setState(() => isUploading = false);
       }
     }
   }
 
   @override
   void dispose() {
-    plantController.dispose();
     locationController.dispose();
     descriptionController.dispose();
     priceController.dispose();
@@ -228,130 +260,265 @@ String imageUrl = await uploadImage();
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          if (isUploading)
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: loadPlants,
+            tooltip: 'Refresh plant list',
+          ),
+        ],
       ),
       body: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            // Image Picker
             GestureDetector(
-  onTap: isUploading ? null : pickImage,
-  child: Container(
-    height: 220,
-    decoration: BoxDecoration(
-      color: Colors.green.shade50,
-      borderRadius: BorderRadius.circular(15),
-      border: Border.all(
-        color: Colors.green,
-      ),
-    ),
-    child: selectedImage == null
-        ? const Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-
-              Icon(
-                Icons.camera_alt,
-                size: 70,
-                color: Colors.green,
+              onTap: isUploading ? null : pickImage,
+              child: Container(
+                height: 200,
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: Colors.green),
+                ),
+                child: selectedImage == null
+                    ? const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.camera_alt, size: 70, color: Colors.green),
+                          SizedBox(height: 10),
+                          Text("Tap to select image", style: TextStyle(fontSize: 16)),
+                          Text("(Optional)", style: TextStyle(color: Colors.grey)),
+                        ],
+                      )
+                    : ClipRRect(
+                        borderRadius: BorderRadius.circular(15),
+                        child: Image.file(selectedImage!, fit: BoxFit.cover),
+                      ),
               ),
-
-              SizedBox(height: 10),
-
-              Text(
-                "Image Optional",
-                style: TextStyle(fontSize: 18),
-              ),
-
-              SizedBox(height: 6),
-
-              Text(
-                "Tap to choose image",
-                style: TextStyle(color: Colors.grey),
-              ),
-            ],
-          )
-        : ClipRRect(
-            borderRadius: BorderRadius.circular(15),
-            child: Image.file(
-              selectedImage!,
-              fit: BoxFit.cover,
             ),
-          ),
-  ),
-),
+            const SizedBox(height: 20),
 
-const SizedBox(height: 20),
-DropdownButtonFormField<String>(
-  value: selectedItemType,
-  decoration: InputDecoration(
-    labelText: "Item Type",
-    prefixIcon: const Icon(
-      Icons.category,
-      color: Colors.green,
-    ),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-    ),
-    filled: true,
-    fillColor: Colors.grey.shade50,
-  ),
-  items: itemTypes.map((item) {
-    return DropdownMenuItem(
-      value: item,
-      child: Text(item),
-    );
-  }).toList(),
-  onChanged: (value) {
-    setState(() {
-      selectedItemType = value!;
-    });
-  },
-),
-            // Plant Name Autocomplete
-            DropdownSearch<Map<String, dynamic>>(
-  items: (filter, infiniteScrollProps) => masterPlants,
+            // Item Type
+            DropdownButtonFormField<String>(
+              value: selectedItemType,
+              decoration: InputDecoration(
+                labelText: "Item Type *",
+                prefixIcon: const Icon(Icons.category, color: Colors.green),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade50,
+              ),
+              items: itemTypes.map((item) {
+                return DropdownMenuItem(value: item, child: Text(item));
+              }).toList(),
+              onChanged: (value) {
+                setState(() => selectedItemType = value!);
+              },
+              validator: (value) => value == null ? "Please select item type" : null,
+            ),
+            const SizedBox(height: 20),
 
-  itemAsString: (item) => item["name"].toString(),
-  compareFn: (item1, item2) => item1["id"] == item2["id"],
-  selectedItem: selectedPlant,
+            // Plant Name Dropdown
+            isLoadingPlants
+                ? Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Column(
+                      children: [
+                        CircularProgressIndicator(color: Colors.green),
+                        SizedBox(height: 12),
+                        Text("Loading plants..."),
+                      ],
+                    ),
+                  )
+                : errorMessage.isNotEmpty
+                    ? Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.red.shade300),
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.red.shade50,
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(Icons.error_outline, color: Colors.red, size: 40),
+                            const SizedBox(height: 8),
+                            Text(
+                              errorMessage,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                            const SizedBox(height: 12),
+                            ElevatedButton(
+                              onPressed: loadPlants,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                              ),
+                              child: const Text("Retry"),
+                            ),
+                          ],
+                        ),
+                      )
+                    : masterPlants.isEmpty
+                        ? Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.orange.shade300),
+                              borderRadius: BorderRadius.circular(12),
+                              color: Colors.orange.shade50,
+                            ),
+                            child: Column(
+                              children: [
+                                Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 40),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  "No plants available in master list",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: Colors.orange),
+                                ),
+                                const SizedBox(height: 12),
+                                ElevatedButton(
+                                  onPressed: loadPlants,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green,
+                                  ),
+                                  child: const Text("Refresh"),
+                                ),
+                              ],
+                            ),
+                          )
+                        : Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade300),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: DropdownSearch<Map<String, dynamic>>(
+                              items: (filter, infiniteScrollProps) {
+                                if (filter == null || filter.isEmpty) {
+                                  return masterPlants;
+                                }
+                                return masterPlants.where((plant) {
+                                  final name = plant["name"].toString().toLowerCase();
+                                  return name.contains(filter.toLowerCase());
+                                }).toList();
+                              },
+                              itemAsString: (item) => item["name"].toString(),
+                              compareFn: (item1, item2) => item1?["id"] == item2?["id"],
+                              selectedItem: selectedPlant,
+                              popupProps: PopupProps.menu(
+                                showSearchBox: true,
+                                fit: FlexFit.loose,
+                                searchFieldProps: const TextFieldProps(
+                                  decoration: InputDecoration(
+                                    hintText: "Search Plant...",
+                                    prefixIcon: Icon(Icons.search),
+                                  ),
+                                ),
+                                emptyBuilder: (context, searchEntry) {
+                                  return const Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: Center(
+                                      child: Text(
+                                        "No plants found",
+                                        style: TextStyle(
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              decoratorProps: DropDownDecoratorProps(
+                                decoration: InputDecoration(
+                                  labelText: "Plant Name *",
+                                  prefixIcon: const Icon(Icons.local_florist, color: Colors.green),
+                                  border: InputBorder.none,
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                  hintText: "Select a plant...",
+                                ),
+                              ),
+                              onChanged: (plant) {
+                                setState(() {
+                                  selectedPlant = plant;
+                                });
+                                print("✅ Selected Plant: ${plant?["name"]} (${plant?["id"]})");
+                              },
+                              validator: (value) => value == null ? "Please select a plant" : null,
+                            ),
+                          ),
+            const SizedBox(height: 20),
 
-  popupProps: PopupProps.menu(
-    showSearchBox: true,
-    fit: FlexFit.loose,
-    searchFieldProps: const TextFieldProps(
-      decoration: InputDecoration(
-        hintText: "Search Plant...",
-      ),
-    ),
-  ),
-
-  decoratorProps: DropDownDecoratorProps(
-    decoration: InputDecoration(
-      labelText: "Plant Name",
-      prefixIcon: const Icon(Icons.local_florist),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-    ),
-  ),
-
-  onChanged: (plant) {
-    setState(() {
-      selectedPlant = plant;
-    });
-
-    print("Selected Plant = ${plant?["name"]}");
-  },
-
-  validator: (value) {
-    if (value == null) {
-      return "Select Plant";
-    }
-    return null;
-  },
-),
-
+            // Show selected plant info
+            if (selectedPlant != null)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.green.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          "Selected: ${selectedPlant!['name']}",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (selectedPlant!['scientificName'].toString().isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 28, top: 4),
+                        child: Text(
+                          "Scientific: ${selectedPlant!['scientificName']}",
+                          style: TextStyle(
+                            fontStyle: FontStyle.italic,
+                            color: Colors.grey.shade700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    if (selectedPlant!['category'].toString().isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 28, top: 2),
+                        child: Text(
+                          "Category: ${selectedPlant!['category']}",
+                          style: TextStyle(
+                            color: Colors.grey.shade700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             const SizedBox(height: 20),
 
             // Description
@@ -360,43 +527,66 @@ DropdownButtonFormField<String>(
               maxLines: 3,
               decoration: InputDecoration(
                 labelText: "Description",
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: const Icon(Icons.description, color: Colors.green),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 filled: true,
                 fillColor: Colors.grey.shade50,
               ),
             ),
-
             const SizedBox(height: 20),
 
             // Location
             TextFormField(
               controller: locationController,
-              validator: (value) {
-                if (value == null || value.isEmpty) return "Enter Location";
-                return null;
-              },
+              validator: (value) => value?.isEmpty == true ? "Enter Location" : null,
               decoration: InputDecoration(
-                labelText: "Location",
+                labelText: "Location *",
                 prefixIcon: const Icon(Icons.location_on, color: Colors.green),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 filled: true,
                 fillColor: Colors.grey.shade50,
               ),
             ),
-
             const SizedBox(height: 20),
 
             // Free Switch
-            SwitchListTile(
-              value: isFree,
-              title: const Text("Free Plant?", style: TextStyle(fontSize: 16)),
-              subtitle: const Text("Gift this plant for free"),
-              onChanged: (value) {
-                setState(() {
-                  isFree = value;
-                  if (value) priceController.clear(); // Clear price if free
-                });
-              },
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isFree ? Colors.green.shade50 : Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isFree ? Colors.green.shade200 : Colors.orange.shade200,
+                ),
+              ),
+              child: SwitchListTile(
+                value: isFree,
+                title: Text(
+                  "Free Plant?",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isFree ? Colors.green : Colors.orange,
+                  ),
+                ),
+                subtitle: Text(
+                  isFree ? "Gift this plant for free" : "This plant is for sale",
+                  style: TextStyle(
+                    color: isFree ? Colors.green.shade700 : Colors.orange.shade700,
+                  ),
+                ),
+                activeColor: Colors.green,
+                onChanged: (value) {
+                  setState(() {
+                    isFree = value;
+                    if (value) priceController.clear();
+                  });
+                },
+              ),
             ),
 
             if (!isFree) ...[
@@ -404,14 +594,13 @@ DropdownButtonFormField<String>(
               TextFormField(
                 controller: priceController,
                 keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) return "Enter Price";
-                  return null;
-                },
+                validator: (value) => value?.isEmpty == true ? "Enter Price" : null,
                 decoration: InputDecoration(
-                  labelText: "Price (₹)",
+                  labelText: "Price (₹) *",
                   prefixIcon: const Icon(Icons.money, color: Colors.green),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   filled: true,
                   fillColor: Colors.grey.shade50,
                 ),
@@ -428,10 +617,19 @@ DropdownButtonFormField<String>(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 icon: isUploading
-                    ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
                     : const Icon(Icons.cloud_upload, size: 24),
                 label: Text(
                   isUploading ? "Uploading..." : "Submit Plant",

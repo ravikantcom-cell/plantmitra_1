@@ -1,149 +1,209 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:plantmitra_1/screens/auth/login_screen.dart';
+import 'package:plantmitra_1/screens/favorites/favorite_screen.dart';
+import 'package:plantmitra_1/screens/chat/chat_list_screen.dart';
+import 'package:plantmitra_1/screens/add_plant/add_plant_screen.dart';
 
-import '../../services/auth_service.dart';
-import '../login/login_screen.dart';
-import '../my_plants/my_plants_screen.dart';
-
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  User? _user;
+
+  @override
+  void initState() {
+    super.initState();
+    _user = _auth.currentUser;
+  }
+
+  Future<void> _logout() async {
+    await _auth.signOut();
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
+    if (_user == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Profile'),
+          backgroundColor: Colors.green,
+          foregroundColor: Colors.white,
+        ),
+        body: const Center(
+          child: Text('Please login to view profile'),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("My Profile"),
+        title: const Text('Profile'),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
-
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-
-            CircleAvatar(
-              radius: 60,
-              backgroundColor: Colors.green.shade100,
-              backgroundImage: user?.photoURL != null
-                  ? NetworkImage(user!.photoURL!)
-                  : null,
-              child: user?.photoURL == null
-                  ? const Icon(
-                      Icons.person,
-                      size: 70,
-                      color: Colors.green,
-                    )
-                  : null,
-            ),
-
-            const SizedBox(height: 20),
-
-            Text(
-              user?.displayName ?? "PlantMitra User",
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            Text(
-              user?.email ?? "",
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            Card(
-              shape: RoundedRectangleBorder(
+            // Profile Header
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(15),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.shade200,
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
                 children: [
-
-                  ListTile(
-  leading: const Icon(
-    Icons.local_florist,
-    color: Colors.green,
-  ),
-  title: const Text("My Plants"),
-  trailing: const Icon(Icons.arrow_forward_ios),
-  onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const MyPlantsScreen(),
-      ),
-    );
-  },
-),
-
-                  const Divider(height: 1),
-
-                  ListTile(
-                    leading: const Icon(
-                      Icons.favorite,
-                      color: Colors.red,
-                    ),
-                    title: const Text("Favorites"),
-                    trailing: const Icon(Icons.arrow_forward_ios),
-                    onTap: () {},
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundImage: _user!.photoURL != null
+                        ? NetworkImage(_user!.photoURL!)
+                        : null,
+                    child: _user!.photoURL == null
+                        ? Text(
+                            _user!.displayName?.substring(0, 1).toUpperCase() ?? '?',
+                            style: const TextStyle(
+                              fontSize: 40,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                        : null,
                   ),
-
-                  const Divider(height: 1),
-
-                  ListTile(
-                    leading: const Icon(
-                      Icons.settings,
-                      color: Colors.blue,
+                  const SizedBox(height: 12),
+                  Text(
+                    _user!.displayName ?? 'User',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
                     ),
-                    title: const Text("Settings"),
-                    trailing: const Icon(Icons.arrow_forward_ios),
-                    onTap: () {},
+                  ),
+                  Text(
+                    _user!.email ?? 'No email',
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                    ),
                   ),
                 ],
               ),
             ),
+            const SizedBox(height: 20),
 
-            const SizedBox(height: 40),
-
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                ),
-                icon: const Icon(Icons.logout),
-                label: const Text(
-                  "Logout",
-                  style: TextStyle(fontSize: 18),
-                ),
-                onPressed: () async {
-                  await AuthService().logout();
-
-                  if (context.mounted) {
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const LoginScreen(),
-                      ),
-                      (route) => false,
-                    );
-                  }
-                },
-              ),
+            // Menu Items
+            _buildMenuItem(
+              icon: Icons.add_circle_outline,
+              title: 'Add New Plant',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AddPlantScreen()),
+                );
+              },
+            ),
+            _buildMenuItem(
+              icon: Icons.favorite_border,
+              title: 'My Favorites',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const FavoriteScreen()),
+                );
+              },
+            ),
+            _buildMenuItem(
+              icon: Icons.chat_bubble_outline,
+              title: 'My Chats',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ChatListScreen()),
+                );
+              },
+            ),
+            _buildMenuItem(
+              icon: Icons.history,
+              title: 'My Orders',
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Orders coming soon!')),
+                );
+              },
+            ),
+            _buildMenuItem(
+              icon: Icons.settings,
+              title: 'Settings',
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Settings coming soon!')),
+                );
+              },
+            ),
+            
+            const Divider(height: 30),
+            
+            _buildMenuItem(
+              icon: Icons.logout,
+              title: 'Logout',
+              color: Colors.red,
+              onTap: _logout,
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    Color? color,
+  }) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: ListTile(
+        leading: Icon(
+          icon,
+          color: color ?? Colors.green,
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: color ?? Colors.black,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        trailing: Icon(
+          Icons.arrow_forward_ios,
+          size: 16,
+          color: Colors.grey.shade400,
+        ),
+        onTap: onTap,
       ),
     );
   }

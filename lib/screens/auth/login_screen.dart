@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:plantmitra_1/screens/home/home_screen.dart';
-import 'package:plantmitra_1/screens/home/home_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Add this import
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,49 +14,80 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance; // Add this
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAuthStatus();
+  }
+
+  Future<void> _checkAuthStatus() async {
+    final user = _auth.currentUser;
+    if (user != null && mounted) {
+      // Save user data when already logged in
+      await _saveUserData(user);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
+    }
+  }
+
+  // Save user data to Firestore
+  Future<void> _saveUserData(User user) async {
+    try {
+      await _firestore.collection('users').doc(user.uid).set({
+        'uid': user.uid,
+        'displayName': user.displayName ?? '',
+        'email': user.email ?? '',
+        'photoURL': user.photoURL ?? '',
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      print('Error saving user data: $e');
+    }
+  }
 
   Future<void> _signInWithGoogle() async {
     setState(() => _isLoading = true);
     
     try {
-      // Trigger Google Sign In
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       
       if (googleUser == null) {
-        // User cancelled the sign in
         setState(() => _isLoading = false);
         return;
       }
 
-      // Get authentication details
       final GoogleSignInAuthentication googleAuth = 
           await googleUser.authentication;
 
-      // Create credential
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      // Sign in to Firebase
-      await _auth.signInWithCredential(credential);
+      final UserCredential userCredential = await _auth.signInWithCredential(credential);
       
-      // Navigate to Home Screen
+      // Save user data to Firestore
+      if (userCredential.user != null) {
+        await _saveUserData(userCredential.user!);
+      }
+      
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (_) => const HomeScreen(), // Keep this as is
-          ),
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
         );
       }
     } catch (e) {
-      // Handle error
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Sign in failed: $e'),
+            content: Text('Sign in failed: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -89,7 +120,6 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // App Logo/Icon
                 Container(
                   width: 120,
                   height: 120,
@@ -110,10 +140,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: Colors.green,
                   ),
                 ),
-                
                 const SizedBox(height: 30),
-                
-                // App Name
                 const Text(
                   'PlantMitra',
                   style: TextStyle(
@@ -122,10 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: Colors.white,
                   ),
                 ),
-                
                 const SizedBox(height: 8),
-                
-                // Subtitle
                 const Text(
                   'Your Plant Companion',
                   style: TextStyle(
@@ -133,10 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: Colors.white70,
                   ),
                 ),
-                
                 const SizedBox(height: 50),
-                
-                // Google Sign In Button
                 SizedBox(
                   width: double.infinity,
                   height: 55,
@@ -179,10 +200,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                   ),
                 ),
-                
                 const SizedBox(height: 20),
-                
-                // Divider
                 Row(
                   children: [
                     Expanded(
@@ -208,16 +226,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
-                
                 const SizedBox(height: 20),
-                
-                // Email Sign In (Optional)
                 SizedBox(
                   width: double.infinity,
                   height: 55,
                   child: OutlinedButton(
                     onPressed: () {
-                      // Navigate to email sign in
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Email sign in coming soon!'),
+                        ),
+                      );
                     },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white,
@@ -237,10 +256,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-                
                 const SizedBox(height: 30),
-                
-                // Terms and Privacy
                 Text(
                   'By continuing, you agree to our Terms of Service and Privacy Policy',
                   textAlign: TextAlign.center,

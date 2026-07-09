@@ -1,4 +1,4 @@
-name: plantmitra
+name: plantmitra_1
 description: "A new Flutter project."
 
 publish_to: 'none'
@@ -11,8 +11,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  
-
   
   # UI & Icons
   cupertino_icons: ^1.0.8
@@ -43,6 +41,6 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/
-    - assets/icons/
+    # - assets/images/
+    # - assets/icons/
     - assets/data/plant_master.csv

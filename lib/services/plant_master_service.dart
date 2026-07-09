@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 class PlantMasterService {
   PlantMasterService._();
 
@@ -14,24 +13,36 @@ class PlantMasterService {
   Future<void> loadPlants() async {
     if (_plants.isNotEmpty) return;
 
-    final snapshot = await _firestore
-        .collection("plant_master")
-        .where("active", isEqualTo: true)
-        .orderBy("name")
-        .get();
+    try {
+      // Simple query without orderBy to avoid index issues
+      final snapshot = await _firestore
+          .collection("plant_master")
+          .get();
 
-    _plants = snapshot.docs.map((e) {
-      final data = e.data();
+      _plants = snapshot.docs.map((e) {
+        final data = e.data();
 
-      return {
-        "id": e.id,
-        "name": data["name"] ?? "",
-        "scientificName": data["scientificName"] ?? "",
-        "category": data["category"] ?? "",
-        "subCategory": data["subCategory"] ?? "",
-        "active": data["active"] ?? true,
-      };
-    }).toList();
+        return {
+          "id": e.id,
+          "name": data["name"] ?? "",
+          "scientificName": data["scientificName"] ?? "",
+          "category": data["category"] ?? "",
+          "subCategory": data["subCategory"] ?? "",
+          "active": data["active"] ?? true,
+        };
+      }).toList();
+
+      // Filter active plants
+      _plants = _plants.where((p) => p["active"] == true).toList();
+      
+      // Sort by name
+      _plants.sort((a, b) => a["name"].toString().compareTo(b["name"].toString()));
+
+      print("✅ Loaded ${_plants.length} plants from master");
+    } catch (e) {
+      print("❌ Error loading plant master: $e");
+      _plants = [];
+    }
   }
 
   /// Returns all plants
@@ -55,10 +66,22 @@ class PlantMasterService {
     }
   }
 
+  /// Find plant by ID
+  Map<String, dynamic>? getPlantById(String id) {
+    try {
+      return _plants.firstWhere(
+        (e) => e["id"] == id,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// All Categories
   List<String> get categories {
     final list = _plants
         .map((e) => e["category"].toString())
+        .where((c) => c.isNotEmpty)
         .toSet()
         .toList();
 
@@ -68,8 +91,7 @@ class PlantMasterService {
   }
 
   /// Plants of a category
-  List<Map<String, dynamic>> plantsByCategory(
-      String category) {
+  List<Map<String, dynamic>> plantsByCategory(String category) {
     return _plants
         .where((e) => e["category"] == category)
         .toList();
@@ -77,13 +99,18 @@ class PlantMasterService {
 
   /// Search by name
   List<Map<String, dynamic>> search(String keyword) {
-    final text = keyword.toLowerCase();
+    final text = keyword.toLowerCase().trim();
+
+    if (text.isEmpty) return [];
 
     return _plants.where((plant) {
-      return plant["name"]
-          .toString()
-          .toLowerCase()
-          .contains(text);
+      final name = plant["name"].toString().toLowerCase();
+      final scientific = plant["scientificName"].toString().toLowerCase();
+      final category = plant["category"].toString().toLowerCase();
+      
+      return name.contains(text) ||
+          scientific.contains(text) ||
+          category.contains(text);
     }).toList();
   }
 

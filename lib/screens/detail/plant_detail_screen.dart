@@ -1,11 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-
-import 'package:plantmitra/services/favorite_service.dart';
-import '../chat/chat_screen.dart';
-import '../edit_plant/edit_plant_screen.dart';
+import 'package:plantmitra_1/services/favorite_service.dart';
+import 'package:plantmitra_1/services/chat_service.dart';
+import 'package:plantmitra_1/screens/chat/chat_screen.dart';
 
 class PlantDetailScreen extends StatefulWidget {
   final String documentId;
@@ -22,346 +19,735 @@ class PlantDetailScreen extends StatefulWidget {
 }
 
 class _PlantDetailScreenState extends State<PlantDetailScreen> {
-  final FavoriteService favoriteService = FavoriteService();
-  bool isFavorite = false;
+  final FavoriteService _favoriteService = FavoriteService();
+  final ChatService _chatService = ChatService();
+  bool _isFavorite = false;
+  bool _isLoading = true;
+  bool _isOwner = false;
+  String? _currentUserId;
 
   @override
   void initState() {
     super.initState();
-    _loadFavoriteState();
-    _increaseView();
+    _checkFavoriteStatus();
+    _checkOwnerStatus();
   }
 
-  // ✅ FIX: Stream ko listen karein
-  Future<void> _loadFavoriteState() async {
-    try {
-      final isFav = await favoriteService.isFavorite(widget.documentId).first;
-      if (mounted) {
-        setState(() {
-          isFavorite = isFav;
-        });
-      }
-    } catch (e) {
-      print("Error loading favorite state: $e");
-    }
+  Future<void> _checkOwnerStatus() async {
+    final currentUser = _chatService.getCurrentUserId();
+    // Using ownerId instead of sellerId
+    final ownerId = widget.plant['ownerId'] ?? '';
+    
+    setState(() {
+      _currentUserId = currentUser;
+      _isOwner = currentUser != null && currentUser == ownerId;
+    });
   }
 
-  // ✅ FIX: Views badhayein
-  Future<void> _increaseView() async {
+  Future<void> _checkFavoriteStatus() async {
     try {
-      await FirebaseFirestore.instance
-          .collection("plants")
-          .doc(widget.documentId)
-          .update({
-        "views": FieldValue.increment(1),
+      final isFav = await _favoriteService.isFavorite(widget.documentId);
+      setState(() {
+        _isFavorite = isFav;
+        _isLoading = false;
       });
-
-      if (mounted) {
-        setState(() {
-          widget.plant["views"] = (widget.plant["views"] ?? 0) + 1;
-        });
-      }
     } catch (e) {
-      print("Error updating views: $e");
+      setState(() => _isLoading = false);
     }
   }
 
-  Future<void> toggleFavorite() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      Fluttertoast.showToast(msg: "Please login to favorite");
+  Future<void> _toggleFavorite() async {
+    try {
+      final newStatus = await _favoriteService.toggleFavorite(widget.documentId);
+      setState(() {
+        _isFavorite = newStatus;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            newStatus ? 'Added to favorites' : 'Removed from favorites',
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _startChat() {
+    if (_currentUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please login to chat with the seller'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
-    final uid = user.uid;
-    final plantRef = FirebaseFirestore.instance.collection("plants").doc(widget.documentId);
-    final favRef = FirebaseFirestore.instance.collection("users").doc(uid).collection("favorites").doc(widget.documentId);
-    final favDoc = await favRef.get();
-
-    try {
-      if (favDoc.exists) {
-        // Unfavorite
-        await favRef.delete();
-        await plantRef.update({"favoriteCount": FieldValue.increment(-1)});
-        if (mounted) {
-          setState(() {
-            isFavorite = false;
-            widget.plant["favoriteCount"] = (widget.plant["favoriteCount"] ?? 1) - 1;
-          });
-          Fluttertoast.showToast(msg: "Removed from favorites", toastLength: Toast.LENGTH_SHORT);
-        }
-      } else {
-        // Favorite
-        await favRef.set({"createdAt": FieldValue.serverTimestamp()});
-        await plantRef.update({"favoriteCount": FieldValue.increment(1)});
-        if (mounted) {
-          setState(() {
-            isFavorite = true;
-            widget.plant["favoriteCount"] = (widget.plant["favoriteCount"] ?? 0) + 1;
-          });
-          Fluttertoast.showToast(msg: "Added to favorites! ❤️", toastLength: Toast.LENGTH_SHORT);
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        Fluttertoast.showToast(msg: "Failed to update favorite");
-      }
+    // Using ownerId instead of sellerId
+    final ownerId = widget.plant['ownerId'] ?? '';
+    if (ownerId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Owner information not available'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
     }
-  }
 
-  Future<void> deletePlant() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Delete Plant"),
-        content: const Text("Are you sure you want to delete this plant?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text("Delete"),
-          ),
-        ],
+    // Check if user is trying to chat with themselves
+    if (_currentUserId == ownerId) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("You can't chat with yourself"),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          senderId: _currentUserId!,
+          receiverId: ownerId,
+          receiverName: widget.plant['ownerName'] ?? 'Seller',
+          receiverImage: widget.plant['ownerPhoto'],
+        ),
       ),
     );
-
-    if (confirm != true) return;
-
-    try {
-      await FirebaseFirestore.instance.collection("plants").doc(widget.documentId).delete();
-      if (mounted) {
-        Fluttertoast.showToast(msg: "Plant Deleted Successfully", backgroundColor: Colors.green);
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      if (mounted) {
-        Fluttertoast.showToast(msg: e.toString());
-      }
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    final isOwner = user != null && user.uid == widget.plant["ownerId"];
+    final isFree = widget.plant['isFree'] ?? false;
+    final price = widget.plant['price'] ?? 0;
+    final name = widget.plant['name'] ?? 'Unknown Plant';
+    final category = widget.plant['category'] ?? 'Uncategorized';
+    final subCategory = widget.plant['subCategory'] ?? '';
+    final itemType = widget.plant['itemType'] ?? 'Plant';
+    final location = widget.plant['location'] ?? 'Location not specified';
+    final description = widget.plant['description'] ?? '';
+    final imageUrl = widget.plant['imageUrl'] ?? '';
+    final scientificName = widget.plant['scientificName'] ?? '';
+    final favoriteCount = widget.plant['favoriteCount'] ?? 0;
+    final views = widget.plant['views'] ?? 0;
+    final chatCount = widget.plant['chatCount'] ?? 0;
+    final ownerName = widget.plant['ownerName'] ?? 'Unknown Owner';
+    final ownerPhoto = widget.plant['ownerPhoto'] ?? '';
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.plant["name"] ?? "Plant"),
+        title: Text(name),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
+        elevation: 0,
         actions: [
           IconButton(
-            icon: Icon(
-              isFavorite ? Icons.favorite : Icons.favorite_border,
-              color: Colors.red,
-            ),
-            onPressed: toggleFavorite,
+            icon: _isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : Icon(
+                    _isFavorite ? Icons.favorite : Icons.favorite_border,
+                    color: Colors.white,
+                  ),
+            onPressed: _isLoading ? null : _toggleFavorite,
           ),
         ],
       ),
       body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: double.infinity,
-              height: 260,
-              color: Colors.green.shade100,
-              child: (widget.plant["imageUrl"] ?? "").toString().isNotEmpty
+            // Image
+            ClipRRect(
+              borderRadius: BorderRadius.circular(15),
+              child: imageUrl.isNotEmpty
                   ? Image.network(
-                      widget.plant["imageUrl"],
+                      imageUrl,
+                      height: 300,
+                      width: double.infinity,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Center(
-                        child: Icon(Icons.local_florist, size: 120, color: Colors.green),
-                      ),
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          height: 300,
+                          width: double.infinity,
+                          color: Colors.green.shade50,
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.green,
+                            ),
+                          ),
+                        );
+                      },
+                      errorBuilder: (_, __, ___) {
+                        return Container(
+                          height: 300,
+                          width: double.infinity,
+                          color: Colors.green.shade100,
+                          child: const Icon(
+                            Icons.local_florist,
+                            size: 100,
+                            color: Colors.green,
+                          ),
+                        );
+                      },
                     )
-                  : const Center(
-                      child: Icon(Icons.local_florist, size: 120, color: Colors.green),
+                  : Container(
+                      height: 300,
+                      width: double.infinity,
+                      color: Colors.green.shade100,
+                      child: const Icon(
+                        Icons.local_florist,
+                        size: 100,
+                        color: Colors.green,
+                      ),
                     ),
             ),
+            const SizedBox(height: 20),
 
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.plant["name"] ?? "",
-                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                  ),
-                  if ((widget.plant["scientificName"] ?? "").toString().isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 5),
-                      child: Text(
-                        widget.plant["scientificName"],
-                        style: TextStyle(fontSize: 17, color: Colors.grey.shade700, fontStyle: FontStyle.italic),
-                      ),
-                    ),
+            // Name
+            Text(
+              name,
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
 
-                  const SizedBox(height: 20),
+            // Scientific Name
+            if (scientificName.isNotEmpty)
+              Text(
+                scientificName,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontStyle: FontStyle.italic,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+            const SizedBox(height: 12),
 
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on, color: Colors.red),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text(widget.plant["location"] ?? "")),
-                    ],
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  Card(
-                    child: ListTile(
-                      leading: const Icon(Icons.category, color: Colors.green),
-                      title: Text("Category : ${widget.plant["category"] ?? "-"}"),
-                      subtitle: Text("Sub Category : ${widget.plant["subCategory"] ?? "-"}"),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  const Text("Description", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 10),
-
+            // Category, SubCategory & Item Type Tags
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (category.isNotEmpty)
                   Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(15),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.green.shade200),
                     ),
-                    child: Text(widget.plant["description"] ?? "No description"),
-                  ),
-
-                  const SizedBox(height: 25),
-
-                  Row(
-                    children: [
-                      const Text("Price : ", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                      Text(
-                        widget.plant["isFree"] == true ? "FREE 🌱" : "₹ ${widget.plant["price"]}",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: widget.plant["isFree"] == true ? Colors.green : Colors.orange,
-                        ),
-                      )
-                    ],
-                  ),
-
-                  const SizedBox(height: 25),
-
-                  Card(
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: Colors.green,
-                        backgroundImage: (widget.plant["ownerPhoto"] ?? "").toString().isNotEmpty
-                            ? NetworkImage(widget.plant["ownerPhoto"])
-                            : null,
-                        child: (widget.plant["ownerPhoto"] ?? "").toString().isEmpty
-                            ? const Icon(Icons.person, color: Colors.white)
-                            : null,
+                    child: Text(
+                      category,
+                      style: TextStyle(
+                        color: Colors.green.shade700,
+                        fontWeight: FontWeight.w600,
                       ),
-                      title: Text(widget.plant["ownerName"] ?? ""),
-                      subtitle: Text(widget.plant["ownerEmail"] ?? ""),
                     ),
                   ),
-
-                  const SizedBox(height: 20),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Column(
-                        children: [
-                          const Icon(Icons.favorite, color: Colors.red),
-                          Text("${widget.plant["favoriteCount"] ?? 0}"),
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          const Icon(Icons.chat, color: Colors.blue),
-                          Text("${widget.plant["chatCount"] ?? 0}"),
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          const Icon(Icons.visibility, color: Colors.green),
-                          Text("${widget.plant["views"] ?? 0}"),
-                        ],
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 25),
-
-                  if (!isOwner)
-                    SizedBox(
-                      width: double.infinity,
-                      height: 55,
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
-                        icon: const Icon(Icons.chat),
-                        label: const Text("Chat with Owner"),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ChatScreen(
-                                plantId: widget.documentId,
-                                receiverId: widget.plant["ownerId"],
-                                receiverName: widget.plant["ownerName"] ?? "",
-                              ),
-                            ),
-                          );
-                        },
+                if (subCategory.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.shade50,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.purple.shade200),
+                    ),
+                    child: Text(
+                      subCategory,
+                      style: TextStyle(
+                        color: Colors.purple.shade700,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-
-                  const SizedBox(height: 25),
-
-                  if (isOwner)
-                    Row(
+                  ),
+                if (itemType.isNotEmpty && itemType != 'Plant')
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.blue.shade200),
+                    ),
+                    child: Text(
+                      itemType,
+                      style: TextStyle(
+                        color: Colors.blue.shade700,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                // Owner badge if user is the owner
+                if (_isOwner)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
-                            icon: const Icon(Icons.edit),
-                            label: const Text("Edit"),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => EditPlantScreen(
-                                    documentId: widget.documentId,
-                                    plant: widget.plant,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                        Icon(
+                          Icons.person,
+                          size: 14,
+                          color: Colors.orange.shade700,
                         ),
-                        const SizedBox(width: 15),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-                            icon: const Icon(Icons.delete),
-                            label: const Text("Delete"),
-                            onPressed: deletePlant,
+                        const SizedBox(width: 4),
+                        Text(
+                          'Your Plant',
+                          style: TextStyle(
+                            color: Colors.orange.shade700,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
                           ),
                         ),
                       ],
                     ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Owner Info
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundImage: ownerPhoto.isNotEmpty
+                        ? NetworkImage(ownerPhoto)
+                        : null,
+                    child: ownerPhoto.isEmpty
+                        ? Text(
+                            ownerName.isNotEmpty ? ownerName[0].toUpperCase() : '?',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Posted by',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        Text(
+                          ownerName,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (!_isOwner)
+                    TextButton(
+                      onPressed: _startChat,
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.green,
+                      ),
+                      child: const Text('Contact'),
+                    ),
                 ],
               ),
             ),
+            const SizedBox(height: 16),
+
+            // Price
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isFree ? Colors.green.shade50 : Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isFree ? Colors.green.shade200 : Colors.orange.shade200,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    isFree ? Icons.volunteer_activism : Icons.attach_money,
+                    color: isFree ? Colors.green : Colors.orange,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    isFree
+                        ? 'FREE - Just take care of it!'
+                        : '₹ $price',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isFree ? Colors.green : Colors.orange,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Location
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.location_on,
+                    color: Colors.green.shade700,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      location,
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Description
+            if (description.isNotEmpty)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Description',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    description,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            const SizedBox(height: 24),
+
+            // Stats Row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatItem(
+                  Icons.favorite,
+                  favoriteCount,
+                  Colors.red,
+                ),
+                _buildStatItem(
+                  Icons.visibility,
+                  views,
+                  Colors.blue,
+                ),
+                _buildStatItem(
+                  Icons.chat_bubble_outline,
+                  chatCount,
+                  Colors.green,
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Chat Button - ONLY SHOW IF USER IS NOT THE OWNER
+            if (!_isOwner) ...[
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton.icon(
+                  onPressed: _startChat,
+                  icon: const Icon(Icons.chat),
+                  label: const Text(
+                    'Chat with Owner',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // Edit Button - ONLY SHOW IF USER IS THE OWNER
+            if (_isOwner) ...[
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    // Navigate to edit plant screen
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Edit plant functionality coming soon'),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.edit),
+                  label: const Text(
+                    'Edit Plant',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Delete Button - ONLY SHOW IF USER IS THE OWNER
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    _showDeleteConfirmation();
+                  },
+                  icon: const Icon(Icons.delete),
+                  label: const Text(
+                    'Delete Plant',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(color: Colors.red),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // Share Button - Show for everyone
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  _sharePlant();
+                },
+                icon: const Icon(Icons.share),
+                label: const Text('Share this plant'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.green,
+                  side: const BorderSide(color: Colors.green),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Report Button - Show for everyone except owner
+            if (!_isOwner)
+              SizedBox(
+                width: double.infinity,
+                height: 40,
+                child: TextButton.icon(
+                  onPressed: () {
+                    _showReportDialog();
+                  },
+                  icon: const Icon(
+                    Icons.flag,
+                    size: 18,
+                    color: Colors.grey,
+                  ),
+                  label: const Text(
+                    'Report this listing',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildStatItem(IconData icon, int count, Color color) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 28),
+        const SizedBox(height: 4),
+        Text(
+          count.toString(),
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showDeleteConfirmation() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Plant'),
+        content: const Text(
+          'Are you sure you want to delete this plant? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await FirebaseFirestore.instance
+                    .collection('plants')
+                    .doc(widget.documentId)
+                    .delete();
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Plant deleted successfully'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+                Navigator.pop(context);
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error deleting plant: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showReportDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Report Listing'),
+        content: const Text(
+          'Are you sure you want to report this listing?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Listing reported. We will review it.'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Report'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _sharePlant() {
+    // Implement share functionality
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Share functionality coming soon'),
       ),
     );
   }
