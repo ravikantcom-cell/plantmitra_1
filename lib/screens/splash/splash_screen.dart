@@ -14,24 +14,32 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
+    print('🚀 SplashScreen: initState called');
     _checkAuthStatus();
   }
 
   Future<void> _checkAuthStatus() async {
+    print('🔍 SplashScreen: Checking auth status...');
+    
     // Show splash for at least 2 seconds
     await Future.delayed(const Duration(seconds: 2));
     
     final user = FirebaseAuth.instance.currentUser;
+    print('👤 Current user: ${user?.uid ?? "null"}');
+    print('👤 User display name: ${user?.displayName ?? "null"}');
+    print('👤 User email: ${user?.email ?? "null"}');
     
     if (mounted) {
       if (user != null) {
         // User is logged in, go to Home
+        print('✅ User is logged in, navigating to HomeScreen');
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const HomeScreen()),
         );
       } else {
         // User is not logged in, go to Login
+        print('❌ User is NOT logged in, navigating to LoginScreen');
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -42,6 +50,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print('🎨 SplashScreen: Building...');
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -59,7 +68,6 @@ class _SplashScreenState extends State<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo
               Container(
                 width: 120,
                 height: 120,
@@ -81,8 +89,6 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               ),
               const SizedBox(height: 30),
-              
-              // App Name
               const Text(
                 'PlantMitra',
                 style: TextStyle(
@@ -92,8 +98,6 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              
-              // Subtitle
               const Text(
                 'Your Plant Companion',
                 style: TextStyle(
@@ -102,8 +106,6 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               ),
               const SizedBox(height: 50),
-              
-              // Loading Indicator
               const CircularProgressIndicator(
                 color: Colors.white,
               ),

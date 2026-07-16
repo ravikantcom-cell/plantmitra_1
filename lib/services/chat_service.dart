@@ -24,7 +24,7 @@ class ChatService {
     return FirebaseAuth.instance.currentUser;
   }
 
-  // 📋 Get user info by ID with better error handling
+  // 📋 Get user info by ID
   Future<Map<String, dynamic>?> getUserInfo(String userId) async {
     try {
       final doc = await _firestore.collection('users').doc(userId).get();
@@ -78,12 +78,11 @@ class ChatService {
       return name;
     } catch (e) {
       print('Error getting user name: $e');
-      // Return a formatted ID as fallback
       return userId.length > 8 ? userId.substring(0, 8) : userId;
     }
   }
 
-  // 📨 Send text message
+  // 📨 Send text message - FIXED to ensure names are saved
   Future<void> sendMessage({
     required String senderId,
     required String receiverId,
@@ -94,6 +93,7 @@ class ChatService {
       
       final chatRef = _firestore.collection('chats').doc(chatId);
 
+      // Add message
       await chatRef
           .collection('messages')
           .add({
@@ -104,10 +104,14 @@ class ChatService {
         'read': false,
       });
 
-      // Get sender name for better display
+      // Get sender and receiver names
       final senderName = await getUserDisplayName(senderId);
       final receiverName = await getUserDisplayName(receiverId);
 
+      print('📝 Sender Name: $senderName');
+      print('📝 Receiver Name: $receiverName');
+
+      // Update chat document with participant names
       await chatRef.set({
         'participants': [senderId, receiverId],
         'participantsNames': {
@@ -119,13 +123,15 @@ class ChatService {
         'lastMessageSender': senderId,
         'lastMessageType': 'text',
       }, SetOptions(merge: true));
+      
+      print('✅ Chat document updated with names');
     } catch (e) {
       print('Error sending message: $e');
       rethrow;
     }
   }
 
-  // 🖼️ Send image message
+  // 🖼️ Send image message - FIXED
   Future<void> sendImage({
     required String senderId,
     required String receiverId,
@@ -143,8 +149,16 @@ class ChatService {
         'read': false,
       });
 
+      // Get sender and receiver names
+      final senderName = await getUserDisplayName(senderId);
+      final receiverName = await getUserDisplayName(receiverId);
+
       await chatRef.set({
         'participants': [senderId, receiverId],
+        'participantsNames': {
+          senderId: senderName,
+          receiverId: receiverName,
+        },
         'lastMessage': '📷 Image',
         'lastMessageTime': FieldValue.serverTimestamp(),
         'lastMessageSender': senderId,
@@ -260,13 +274,12 @@ class ChatService {
     }
   }
 
-  // ✅ Mark messages as read - Fixed with index warning handling
+  // ✅ Mark messages as read
   Future<void> markMessagesAsRead({
     required String chatId,
     required String userId,
   }) async {
     try {
-      // First try to get unread messages
       final messagesRef = _firestore
           .collection('chats')
           .doc(chatId)
@@ -285,27 +298,6 @@ class ChatService {
       await batch.commit();
     } catch (e) {
       print('Error marking messages as read: $e');
-      // If index is missing, try without the read filter
-      try {
-        final messagesRef = _firestore
-            .collection('chats')
-            .doc(chatId)
-            .collection('messages')
-            .where('sender', isNotEqualTo: userId);
-
-        final snapshot = await messagesRef.get();
-        
-        final batch = _firestore.batch();
-        for (var doc in snapshot.docs) {
-          final data = doc.data();
-          if (data['read'] == false) {
-            batch.update(doc.reference, {'read': true});
-          }
-        }
-        await batch.commit();
-      } catch (e2) {
-        print('Error in fallback mark messages as read: $e2');
-      }
     }
   }
 
@@ -367,22 +359,6 @@ class ChatService {
           totalUnread += snapshot.count ?? 0;
         } catch (e) {
           print('Error counting unread for chat ${chat.id}: $e');
-          // Fallback: count manually
-          try {
-            final allMessages = await chat.reference
-                .collection('messages')
-                .where('sender', isNotEqualTo: userId)
-                .get();
-            int unread = 0;
-            for (var doc in allMessages.docs) {
-              if (doc.data()['read'] == false) {
-                unread++;
-              }
-            }
-            totalUnread += unread;
-          } catch (e2) {
-            print('Error in fallback unread count: $e2');
-          }
         }
       }
       return totalUnread;
@@ -425,7 +401,6 @@ class ChatService {
       final chatDoc = await chatRef.get();
       
       if (chatDoc.exists && (chatDoc.data()?['participants'] as List).contains(userId)) {
-        // Delete all messages
         final messages = await chatRef.collection('messages').get();
         final batch = _firestore.batch();
         for (var doc in messages.docs) {
@@ -465,6 +440,31 @@ class ChatService {
     } catch (e) {
       print('Error checking chat exists: $e');
       return false;
+    }
+  }
+
+  // 🛠️ Helper method to update participant names in existing chats
+  Future<void> updateParticipantNames(String chatId) async {
+    try {
+      final chatDoc = await _firestore.collection('chats').doc(chatId).get();
+      if (!chatDoc.exists) return;
+      
+      final data = chatDoc.data() as Map<String, dynamic>;
+      final participants = data['participants'] as List;
+      
+      Map<String, String> names = {};
+      for (var userId in participants) {
+        final name = await getUserDisplayName(userId);
+        names[userId] = name;
+      }
+      
+      await _firestore.collection('chats').doc(chatId).update({
+        'participantsNames': names,
+      });
+      
+      print('✅ Updated participant names for chat: $chatId');
+    } catch (e) {
+      print('Error updating participant names: $e');
     }
   }
 }

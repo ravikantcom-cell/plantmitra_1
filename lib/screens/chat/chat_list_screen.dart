@@ -18,6 +18,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
   bool _useFallbackQuery = false;
   bool _isInitialized = false;
   StreamSubscription? _subscription;
+  
+  // Cache for user names
+  final Map<String, String> _userNameCache = {};
 
   @override
   void initState() {
@@ -62,6 +65,24 @@ class _ChatListScreenState extends State<ChatListScreen> {
           _isInitialized = true;
         });
       }
+    }
+  }
+
+  // Get user name with caching
+  Future<String> _getUserName(String userId) async {
+    if (_userNameCache.containsKey(userId)) {
+      return _userNameCache[userId]!;
+    }
+
+    try {
+      final name = await _chatService.getUserDisplayName(userId);
+      _userNameCache[userId] = name;
+      return name;
+    } catch (e) {
+      print('Error getting user name: $e');
+      final fallback = userId.length > 8 ? userId.substring(0, 8) : userId;
+      _userNameCache[userId] = fallback;
+      return fallback;
     }
   }
 
@@ -311,37 +332,39 @@ class _ChatListScreenState extends State<ChatListScreen> {
               final isFromMe = lastMessageSender == userId;
               final chatId = chat['id'] ?? '';
 
-              // Get participant names from chat data or fetch
+              // Try to get name from chat document first (faster)
               final participantsNames = chat['participantsNames'] as Map?;
-              String displayName = participantsNames?[otherUser] ?? '';
-              
-              // If name not in chat data, fetch it
-              if (displayName.isEmpty) {
-                return FutureBuilder<String>(
-                  future: _chatService.getUserDisplayName(otherUser),
-                  builder: (context, nameSnapshot) {
-                    final name = nameSnapshot.data ?? otherUser.substring(0, 6);
-                    return _buildChatItem(
-                      chatId: chatId,
-                      userId: userId,
-                      otherUserId: otherUser,
-                      displayName: name,
-                      lastMessage: lastMessage,
-                      lastMessageTime: lastMessageTime,
-                      isFromMe: isFromMe,
-                    );
-                  },
+              String cachedName = participantsNames?[otherUser] ?? '';
+
+              // If name is in chat document, use it directly
+              if (cachedName.isNotEmpty) {
+                return _buildChatItem(
+                  chatId: chatId,
+                  userId: userId,
+                  otherUserId: otherUser,
+                  displayName: cachedName,
+                  lastMessage: lastMessage,
+                  lastMessageTime: lastMessageTime,
+                  isFromMe: isFromMe,
                 );
               }
 
-              return _buildChatItem(
-                chatId: chatId,
-                userId: userId,
-                otherUserId: otherUser,
-                displayName: displayName,
-                lastMessage: lastMessage,
-                lastMessageTime: lastMessageTime,
-                isFromMe: isFromMe,
+              // Otherwise fetch from users collection
+              return FutureBuilder<String>(
+                future: _getUserName(otherUser),
+                builder: (context, nameSnapshot) {
+                  final displayName = nameSnapshot.data ?? otherUser.substring(0, 8);
+
+                  return _buildChatItem(
+                    chatId: chatId,
+                    userId: userId,
+                    otherUserId: otherUser,
+                    displayName: displayName,
+                    lastMessage: lastMessage,
+                    lastMessageTime: lastMessageTime,
+                    isFromMe: isFromMe,
+                  );
+                },
               );
             },
           );

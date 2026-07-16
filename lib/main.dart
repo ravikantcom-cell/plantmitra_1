@@ -9,15 +9,23 @@ import 'package:plantmitra_1/screens/chat/chat_list_screen.dart';
 import 'package:plantmitra_1/screens/chat/chat_screen.dart';
 import 'package:plantmitra_1/screens/detail/plant_detail_screen.dart';
 import 'package:plantmitra_1/screens/profile/profile_screen.dart';
+import 'package:plantmitra_1/widgets/session_wrapper.dart';
+import 'package:plantmitra_1/widgets/session_listener.dart';
 
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  print('🚀 Main: Starting app...');
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print('✅ Firebase initialized successfully!');
+  } catch (e) {
+    print('❌ Firebase initialization error: $e');
+  }
 
   runApp(const PlantMitraApp());
 }
@@ -49,7 +57,6 @@ class PlantMitraApp extends StatelessWidget {
         '/profile': (context) => const ProfileScreen(),
       },
       onGenerateRoute: (settings) {
-        // Handle dynamic routes with parameters
         if (settings.name == '/chat') {
           final args = settings.arguments as Map<String, dynamic>;
           return MaterialPageRoute(

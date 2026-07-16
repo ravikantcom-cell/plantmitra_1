@@ -2,7 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:plantmitra_1/screens/home/home_screen.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Add this import
+import 'package:plantmitra_1/screens/auth/email_login_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,7 +15,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance; // Add this
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool _isLoading = false;
 
   @override
@@ -26,7 +27,6 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _checkAuthStatus() async {
     final user = _auth.currentUser;
     if (user != null && mounted) {
-      // Save user data when already logged in
       await _saveUserData(user);
       Navigator.pushReplacement(
         context,
@@ -41,13 +41,15 @@ class _LoginScreenState extends State<LoginScreen> {
       await _firestore.collection('users').doc(user.uid).set({
         'uid': user.uid,
         'displayName': user.displayName ?? '',
+        'name': user.displayName ?? '',
         'email': user.email ?? '',
         'photoURL': user.photoURL ?? '',
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
+      print('✅ User data saved for: ${user.displayName}');
     } catch (e) {
-      print('Error saving user data: $e');
+      print('❌ Error saving user data: $e');
     }
   }
 
@@ -72,7 +74,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final UserCredential userCredential = await _auth.signInWithCredential(credential);
       
-      // Save user data to Firestore
       if (userCredential.user != null) {
         await _saveUserData(userCredential.user!);
       }
@@ -120,6 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                // App Logo/Icon
                 Container(
                   width: 120,
                   height: 120,
@@ -140,7 +142,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: Colors.green,
                   ),
                 ),
+                
                 const SizedBox(height: 30),
+                
+                // App Name
                 const Text(
                   'PlantMitra',
                   style: TextStyle(
@@ -149,7 +154,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: Colors.white,
                   ),
                 ),
+                
                 const SizedBox(height: 8),
+                
+                // Subtitle
                 const Text(
                   'Your Plant Companion',
                   style: TextStyle(
@@ -157,7 +165,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: Colors.white70,
                   ),
                 ),
+                
                 const SizedBox(height: 50),
+                
+                // Google Sign In Button
                 SizedBox(
                   width: double.infinity,
                   height: 55,
@@ -200,7 +211,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                   ),
                 ),
+                
                 const SizedBox(height: 20),
+                
+                // Divider
                 Row(
                   children: [
                     Expanded(
@@ -226,15 +240,19 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
+                
                 const SizedBox(height: 20),
+                
+                // Email Sign In
                 SizedBox(
                   width: double.infinity,
                   height: 55,
                   child: OutlinedButton(
                     onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Email sign in coming soon!'),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const EmailLoginScreen(),
                         ),
                       );
                     },
@@ -256,7 +274,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
+                
                 const SizedBox(height: 30),
+                
+                // Terms and Privacy
                 Text(
                   'By continuing, you agree to our Terms of Service and Privacy Policy',
                   textAlign: TextAlign.center,

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:plantmitra_1/services/plant_count_service.dart';
 import 'package:plantmitra_1/services/plant_master_service.dart';
+import 'package:plantmitra_1/services/session_service.dart'; // Add this
 import 'package:plantmitra_1/screens/home/all_plants_screen.dart';
 import 'package:plantmitra_1/screens/add_plant/add_plant_screen.dart';
 import 'package:plantmitra_1/screens/favorites/favorite_screen.dart';
 import 'package:plantmitra_1/screens/chat/chat_list_screen.dart';
 import 'package:plantmitra_1/screens/profile/profile_screen.dart';
+import 'package:plantmitra_1/widgets/session_listener.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,6 +19,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final PlantCountService _countService = PlantCountService();
   final PlantMasterService _masterService = PlantMasterService.instance;
+  final SessionService _sessionService = SessionService();
   Map<String, int> _counts = {};
   bool _isLoading = true;
   int _selectedIndex = 0;
@@ -30,11 +33,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      // Load master plants first
       await _masterService.loadPlants();
       print("Master plants loaded: ${_masterService.plants.length}");
       
-      // Load counts
       final counts = await _countService.getAllCounts();
       setState(() {
         _counts = counts;
@@ -65,176 +66,183 @@ class _HomeScreenState extends State<HomeScreen> {
     final freeCount = _counts['free'] ?? 0;
     final forSaleCount = _counts['forSale'] ?? 0;
 
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        title: const Text(
-          'PlantMitra',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              // Navigate to search screen
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {
-              // Navigate to notifications
-            },
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _loadCounts,
-        child: _isLoading
-            ? const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      color: Colors.green,
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      'Loading...',
-                      style: TextStyle(
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Section 1: All Plants
-                    _buildSectionCard(
-                      title: 'All Plants ($totalCount)',
-                      subtitle: 'Browse all listings',
-                      icon: Icons.local_florist,
-                      iconColor: Colors.green,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const AllPlantsScreen(
-                              title: 'All Plants',
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Section 2: Free Plants
-                    _buildSectionCard(
-                      title: 'Free Plants ($freeCount)',
-                      subtitle: 'Browse all listings',
-                      icon: Icons.volunteer_activism,
-                      iconColor: Colors.green,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => AllPlantsScreen(
-                              title: 'Free Plants',
-                              isFree: true,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Section 3: Plants for Sale
-                    _buildSectionCard(
-                      title: 'Plants for sale ($forSaleCount)',
-                      subtitle: 'Browse all listings',
-                      icon: Icons.attach_money,
-                      iconColor: Colors.orange,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => AllPlantsScreen(
-                              title: 'Plants for Sale',
-                              isFree: false,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 30),
-
-                    // Quick Stats
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(15),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.shade200,
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildStatItem(
-                            'Total',
-                            totalCount.toString(),
-                            Icons.local_florist,
-                            Colors.green,
-                          ),
-                          _buildStatItem(
-                            'Free',
-                            freeCount.toString(),
-                            Icons.volunteer_activism,
-                            Colors.green,
-                          ),
-                          _buildStatItem(
-                            'For Sale',
-                            forSaleCount.toString(),
-                            Icons.attach_money,
-                            Colors.orange,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // Navigate to Add Plant Screen
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const AddPlantScreen(),
+    return SessionListener( // Wrap with SessionListener
+      child: Scaffold(
+        backgroundColor: Colors.grey.shade50,
+        appBar: AppBar(
+          title: const Text(
+            'PlantMitra',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
             ),
-          );
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Add Plant'),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
+          ),
+          backgroundColor: Colors.green,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () {
+                // Reset timer on action
+                _sessionService.resetTimer();
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined),
+              onPressed: () {
+                // Reset timer on action
+                _sessionService.resetTimer();
+              },
+            ),
+          ],
+        ),
+        body: RefreshIndicator(
+          onRefresh: _loadCounts,
+          child: _isLoading
+              ? const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        color: Colors.green,
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'Loading...',
+                        style: TextStyle(
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Section 1: All Plants
+                      _buildSectionCard(
+                        title: 'All Plants ($totalCount)',
+                        subtitle: 'Browse all listings',
+                        icon: Icons.local_florist,
+                        iconColor: Colors.green,
+                        onTap: () {
+                          _sessionService.resetTimer();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AllPlantsScreen(
+                                title: 'All Plants',
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Section 2: Free Plants
+                      _buildSectionCard(
+                        title: 'Free Plants ($freeCount)',
+                        subtitle: 'Browse all listings',
+                        icon: Icons.volunteer_activism,
+                        iconColor: Colors.green,
+                        onTap: () {
+                          _sessionService.resetTimer();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AllPlantsScreen(
+                                title: 'Free Plants',
+                                isFree: true,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Section 3: Plants for Sale
+                      _buildSectionCard(
+                        title: 'Plants for sale ($forSaleCount)',
+                        subtitle: 'Browse all listings',
+                        icon: Icons.attach_money,
+                        iconColor: Colors.orange,
+                        onTap: () {
+                          _sessionService.resetTimer();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AllPlantsScreen(
+                                title: 'Plants for Sale',
+                                isFree: false,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 30),
+
+                      // Quick Stats
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(15),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.shade200,
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildStatItem(
+                              'Total',
+                              totalCount.toString(),
+                              Icons.local_florist,
+                              Colors.green,
+                            ),
+                            _buildStatItem(
+                              'Free',
+                              freeCount.toString(),
+                              Icons.volunteer_activism,
+                              Colors.green,
+                            ),
+                            _buildStatItem(
+                              'For Sale',
+                              forSaleCount.toString(),
+                              Icons.attach_money,
+                              Colors.orange,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () {
+            _sessionService.resetTimer();
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const AddPlantScreen(),
+              ),
+            );
+          },
+          icon: const Icon(Icons.add),
+          label: const Text('Add Plant'),
+          backgroundColor: Colors.green,
+          foregroundColor: Colors.white,
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        bottomNavigationBar: _buildBottomNavigationBar(),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
@@ -337,6 +345,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       currentIndex: _selectedIndex,
       onTap: (index) {
+        _sessionService.resetTimer();
         setState(() {
           _selectedIndex = index;
         });
