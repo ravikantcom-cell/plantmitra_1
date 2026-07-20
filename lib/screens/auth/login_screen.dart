@@ -1,9 +1,13 @@
+// lib/screens/auth/login_screen.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:plantmitra_1/screens/home/home_screen.dart';
 import 'package:plantmitra_1/screens/auth/email_login_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:plantmitra_1/utils/logger.dart';
+import 'package:plantmitra_1/widgets/custom_button.dart';
+import 'package:plantmitra_1/constants/app_assets.dart';
+import 'package:plantmitra_1/theme/app_colors.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -28,10 +32,9 @@ class _LoginScreenState extends State<LoginScreen> {
     final user = _auth.currentUser;
     if (user != null && mounted) {
       await _saveUserData(user);
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
     }
   }
 
@@ -47,9 +50,9 @@ class _LoginScreenState extends State<LoginScreen> {
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
-      print('✅ User data saved for: ${user.displayName}');
+      Logger.info('✅ User data saved for: ${user.displayName}');
     } catch (e) {
-      print('❌ Error saving user data: $e');
+      Logger.error('❌ Error saving user data: $e');
     }
   }
 
@@ -79,17 +82,14 @@ class _LoginScreenState extends State<LoginScreen> {
       }
       
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
+        Navigator.pushReplacementNamed(context, '/home');
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Sign in failed: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -104,16 +104,8 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.green.shade700,
-              Colors.green.shade500,
-              Colors.green.shade300,
-            ],
-          ),
+        decoration: const BoxDecoration(
+          color: AppColors.primary, // Or use AppColors.primary if defined
         ),
         child: SafeArea(
           child: Padding(
@@ -126,20 +118,20 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: 120,
                   height: 120,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.white,
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.local_florist,
-                    size: 70,
-                    color: Colors.green,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Image.asset(AppAssets.logo,
+)
                   ),
                 ),
                 
@@ -147,11 +139,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 
                 // App Name
                 const Text(
-                  'PlantMitra',
+                  'Jarvis Green',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: AppColors.white,
                   ),
                 ),
                 
@@ -162,53 +154,22 @@ class _LoginScreenState extends State<LoginScreen> {
                   'Your Plant Companion',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.white70,
+                    color: AppColors.white,
                   ),
                 ),
                 
                 const SizedBox(height: 50),
                 
                 // Google Sign In Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 55,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _signInWithGoogle,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black87,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 5,
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.green,
-                            ),
-                          )
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Image.network(
-                                'https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png',
-                                height: 24,
-                                width: 24,
-                              ),
-                              const SizedBox(width: 12),
-                              const Text(
-                                'Continue with Google',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
+                CustomButton(
+                  text: "Continue with Google",
+                  type: ButtonType.google,
+                  isLoading: _isLoading,
+                  onPressed: _signInWithGoogle,
+                  leading: Image.asset(
+                    AppAssets.googleLogo,
+                    width: 22,
+                    height: 22,
                   ),
                 ),
                 
@@ -219,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     Expanded(
                       child: Divider(
-                        color: Colors.white.withOpacity(0.3),
+                        color: Colors.white.withValues(alpha: 0.3),
                         thickness: 1,
                       ),
                     ),
@@ -228,13 +189,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Text(
                         'or',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                         ),
                       ),
                     ),
                     Expanded(
                       child: Divider(
-                        color: Colors.white.withOpacity(0.3),
+                        color: Colors.white.withValues(alpha: 0.3),
                         thickness: 1,
                       ),
                     ),
@@ -243,37 +204,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 
                 const SizedBox(height: 20),
                 
-                // Email Sign In
-                SizedBox(
-                  width: double.infinity,
-                  height: 55,
-                  child: OutlinedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const EmailLoginScreen(),
-                        ),
-                      );
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: BorderSide(
-                        color: Colors.white.withOpacity(0.5),
+                // Email Sign In (Fixed: Removed duplicate code)
+                CustomButton(
+                  text: "Sign in with Email",
+                  type: ButtonType.outline,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const EmailLoginScreen(),
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Sign in with Email',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
+                
+                // ❌ REMOVED: The extra style/child code that caused the error
                 
                 const SizedBox(height: 30),
                 
@@ -283,7 +228,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.white.withOpacity(0.6),
+                    color: Colors.white.withValues(alpha: 0.6),
                   ),
                 ),
               ],

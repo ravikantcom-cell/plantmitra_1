@@ -1,0 +1,51 @@
+id,name,scientificName,category,subCategory
+lavender,Lavender,Lavandula angustifolia,Herb,Aromatic
+thyme,Thyme,Thymus vulgaris,Herb,Culinary
+oregano,Oregano,Origanum vulgare,Herb,Culinary
+sage,Sage,Salvia officinalis,Herb,Culinary
+parsley,Parsley,Petroselinum crispum,Herb,Culinary
+dill,Dill,Anethum graveolens,Herb,Culinary
+fennel,Fennel,Foeniculum vulgare,Herb,Culinary
+chives,Chives,Allium schoenoprasum,Herb,Culinary
+lemongrass,Lemongrass,Cymbopogon citratus,Herb,Aromatic
+bay_laurel,Bay Laurel,Laurus nobilis,Herb,Culinary
+stevia,Stevia,Stevia rebaudiana,Medicinal Plant,Herb
+catnip,Catnip,Nepeta cataria,Herb,Medicinal
+marjoram,Marjoram,Origanum majorana,Herb,Culinary
+tarragon,Tarragon,Artemisia dracunculus,Herb,Culinary
+winter_savory,Winter Savory,Satureja montana,Herb,Culinary
+summer_savory,Summer Savory,Satureja hortensis,Herb,Culinary
+hyssop,Hyssop,Hyssopus officinalis,Herb,Medicinal
+lovage,Lovage,Levisticum officinale,Herb,Culinary
+borage,Borage,Borago officinalis,Herb,Medicinal
+angelica,Angelica,Angelica archangelica,Medicinal Plant,Herb
+echinacea,Echinacea,Echinacea purpurea,Medicinal Plant,Flower
+feverfew,Feverfew,Tanacetum parthenium,Medicinal Plant,Flower
+valerian,Valerian,Valeriana officinalis,Medicinal Plant,Herb
+yarrow,Yarrow,Achillea millefolium,Medicinal Plant,Flower
+wormwood,Wormwood,Artemisia absinthium,Medicinal Plant,Herb
+licorice,Licorice,Glycyrrhiza glabra,Medicinal Plant,Herb
+ashwagandha,Ashwagandha,Withania somnifera,Medicinal Plant,Herb
+brahmi,Brahmi,Bacopa monnieri,Medicinal Plant,Aquatic
+giloy,Giloy,Tinospora cordifolia,Medicinal Plant,Climber
+shatavari,Shatavari,Asparagus racemosus,Medicinal Plant,Climber
+kalmegh,Kalmegh,Andrographis paniculata,Medicinal Plant,Herb
+arjuna,Arjuna,Terminalia arjuna,Medicinal Plant,Tree
+bael,Bael,Aegle marmelos,Fruit Plant,Tree
+amla,Amla,Phyllanthus emblica,Fruit Plant,Tree
+jamun,Jamun,Syzygium cumini,Fruit Plant,Tree
+litchi,Litchi,Litchi chinensis,Fruit Plant,Tree
+sapota,Sapota,Manilkara zapota,Fruit Plant,Tree
+custard_apple,Custard Apple,Annona squamosa,Fruit Plant,Tree
+dragon_fruit,Dragon Fruit,Selenicereus undatus,Fruit Plant,Cactus
+passion_fruit,Passion Fruit,Passiflora edulis,Fruit Plant,Climber
+kiwi,Kiwi,Actinidia deliciosa,Fruit Plant,Climber
+avocado,Avocado,Persea americana,Fruit Plant,Tree
+star_fruit,Star Fruit,Averrhoa carambola,Fruit Plant,Tree
+mulberry,Mulberry,Morus alba,Fruit Plant,Tree
+fig,Fig,Ficus carica,Fruit Plant,Tree
+olive,Olive,Olea europaea,Fruit Plant,Tree
+grape,Grape,Vitis vinifera,Fruit Plant,Climber
+black_grape,Black Grape,Vitis vinifera,Fruit Plant,Climber
+green_grape,Green Grape,Vitis vinifera,Fruit Plant,Climber
+pear,Pear,Pyrus communis,Fruit Plant,Tree

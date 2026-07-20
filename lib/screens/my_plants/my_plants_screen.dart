@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../detail/plant_detail_screen.dart';
+
 import 'package:plantmitra_1/screens/detail/plant_detail_screen.dart';
 
 class MyPlantsScreen extends StatelessWidget {

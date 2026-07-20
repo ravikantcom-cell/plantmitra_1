@@ -1,5 +1,7 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:plantmitra_1/screens/auth/login_screen.dart';
 import 'package:plantmitra_1/screens/home/home_screen.dart';
 import 'package:plantmitra_1/screens/splash/splash_screen.dart';
@@ -9,44 +11,52 @@ import 'package:plantmitra_1/screens/chat/chat_list_screen.dart';
 import 'package:plantmitra_1/screens/chat/chat_screen.dart';
 import 'package:plantmitra_1/screens/detail/plant_detail_screen.dart';
 import 'package:plantmitra_1/screens/profile/profile_screen.dart';
-import 'package:plantmitra_1/widgets/session_wrapper.dart';
-import 'package:plantmitra_1/widgets/session_listener.dart';
-
+import 'package:plantmitra_1/utils/logger.dart';
+import 'package:plantmitra_1/theme/app_theme.dart';
 import 'firebase_options.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  print('🚀 Main: Starting app...');
+  Logger.info('🚀 Jarvis Green: Starting app...');
 
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    print('✅ Firebase initialized successfully!');
+    Logger.info('✅ Firebase initialized successfully!');
+    
+    await _setupFirebaseMessaging();
   } catch (e) {
-    print('❌ Firebase initialization error: $e');
+    Logger.error('❌ Firebase initialization error: $e');
   }
 
-  runApp(const PlantMitraApp());
+  runApp(const JarvisGreenApp());
 }
 
-class PlantMitraApp extends StatelessWidget {
-  const PlantMitraApp({super.key});
+Future<void> _setupFirebaseMessaging() async {
+  try {
+    final messaging = FirebaseMessaging.instance;
+    final settings = await messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+    Logger.info('Notification permission: ${settings.authorizationStatus}');
+  } catch (e) {
+    Logger.warning('Could not setup Firebase Messaging: $e');
+  }
+}
+
+class JarvisGreenApp extends StatelessWidget {
+  const JarvisGreenApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: "PlantMitra",
-      theme: ThemeData(
-        colorSchemeSeed: Colors.green,
-        useMaterial3: true,
-        fontFamily: 'Roboto',
-        appBarTheme: const AppBarTheme(
-          elevation: 0,
-          centerTitle: false,
-        ),
-      ),
+      title: "Jarvis Green",
+      theme: AppTheme.lightTheme,
       home: const SplashScreen(),
       routes: {
         '/login': (context) => const LoginScreen(),

@@ -1,7 +1,9 @@
+// lib/screens/favorites/favorite_screen.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:plantmitra_1/screens/detail/plant_detail_screen.dart';
+import 'package:plantmitra_1/utils/logger.dart';
 
 class FavoriteScreen extends StatefulWidget {
   const FavoriteScreen({super.key});
@@ -116,6 +118,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 
           // Error state
           if (favSnapshot.hasError) {
+            Logger.error('Error loading favorites: ${favSnapshot.error}');
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -566,20 +569,25 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
           .doc(plantId)
           .delete();
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Removed from favorites"),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Removed from favorites"),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Error removing favorite: $e"),
-          backgroundColor: Colors.red,
-        ),
-      );
+      Logger.error('Error removing favorite: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Error removing favorite: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -599,7 +607,9 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              if (mounted) {
+                Navigator.pop(context);
+              }
               try {
                 final batch = FirebaseFirestore.instance.batch();
                 final snapshot = await FirebaseFirestore.instance
@@ -613,19 +623,24 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                 }
                 await batch.commit();
                 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("All favorites cleared"),
-                    backgroundColor: Colors.green,
-                  ),
-                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("All favorites cleared"),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text("Error clearing favorites: $e"),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                Logger.error('Error clearing favorites: $e');
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("Error clearing favorites: $e"),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
             },
             style: TextButton.styleFrom(

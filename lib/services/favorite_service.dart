@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:plantmitra_1/services/firestore_service.dart';
 
 class FavoriteService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore = FirestoreService.db;
 
   // Add plant to favorites
   Future<void> addFavorite(String plantId) async {

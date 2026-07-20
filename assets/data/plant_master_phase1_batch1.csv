@@ -1,0 +1,422 @@
+id,name,scientificName,family,category,subCategory,genus,species,sunlight,watering,difficulty,airPurifying,petSafe,description
+money_plant,Money Plant,Epipremnum aureum,Araceae,Indoor Plant,Foliage,Epipremnum,aureum,Bright Indirect,Medium,Easy,Yes,No,Popular trailing indoor foliage plant.
+golden_pothos,Golden Pothos,Epipremnum aureum,Araceae,Indoor Plant,Foliage,Epipremnum,aureum,Bright Indirect,Medium,Easy,Yes,No,Golden variegated pothos ideal for homes.
+marble_queen_pothos,Marble Queen Pothos,Epipremnum aureum 'Marble Queen',Araceae,Indoor Plant,Foliage,Epipremnum,aureum,Bright Indirect,Medium,Easy,Yes,No,Cream-white variegated pothos.
+neon_pothos,Neon Pothos,Epipremnum aureum 'Neon',Araceae,Indoor Plant,Foliage,Epipremnum,aureum,Bright Indirect,Medium,Easy,Yes,No,Bright lime green foliage.
+njoy_pothos,N'Joy Pothos,Epipremnum aureum 'N'Joy',Araceae,Indoor Plant,Foliage,Epipremnum,aureum,Bright Indirect,Medium,Easy,Yes,No,Compact variegated pothos.
+pearls_jade_pothos,Pearls and Jade Pothos,Epipremnum aureum 'Pearls and Jade',Araceae,Indoor Plant,Foliage,Epipremnum,aureum,Bright Indirect,Medium,Easy,Yes,No,Small variegated leaves.
+manjula_pothos,Manjula Pothos,Epipremnum aureum 'Manjula',Araceae,Indoor Plant,Foliage,Epipremnum,aureum,Bright Indirect,Medium,Easy,Yes,No,Highly variegated pothos cultivar.
+cebu_blue_pothos,Cebu Blue Pothos,Epipremnum pinnatum,Araceae,Indoor Plant,Climber,Epipremnum,pinnatum,Bright Indirect,Medium,Easy,Yes,No,Blue-green climbing foliage.
+global_green_pothos,Global Green Pothos,Epipremnum aureum 'Global Green',Araceae,Indoor Plant,Foliage,Epipremnum,aureum,Bright Indirect,Medium,Easy,Yes,No,Green variegated pothos.
+snow_queen_pothos,Snow Queen Pothos,Epipremnum aureum 'Snow Queen',Araceae,Indoor Plant,Foliage,Epipremnum,aureum,Bright Indirect,Medium,Easy,Yes,No,Mostly white variegated foliage.
+snake_plant,Snake Plant,Dracaena trifasciata,Asparagaceae,Indoor Plant,Foliage,Dracaena,trifasciata,Low to Bright,Low,Easy,Yes,No,Drought tolerant air purifier.
+laurentii_snake_plant,Laurentii Snake Plant,Dracaena trifasciata 'Laurentii',Asparagaceae,Indoor Plant,Foliage,Dracaena,trifasciata,Low to Bright,Low,Easy,Yes,No,Yellow-edged snake plant.
+moonshine_snake_plant,Moonshine Snake Plant,Dracaena trifasciata 'Moonshine',Asparagaceae,Indoor Plant,Foliage,Dracaena,trifasciata,Bright Indirect,Low,Easy,Yes,No,Silver-green foliage.
+black_coral_snake_plant,Black Coral Snake Plant,Dracaena trifasciata 'Black Coral',Asparagaceae,Indoor Plant,Foliage,Dracaena,trifasciata,Low to Bright,Low,Easy,Yes,No,Dark striped leaves.
+whale_fin_snake_plant,Whale Fin Snake Plant,Dracaena masoniana,Asparagaceae,Indoor Plant,Foliage,Dracaena,masoniana,Bright Indirect,Low,Easy,Yes,No,Single giant paddle-shaped leaf.
+zz_plant,ZZ Plant,Zamioculcas zamiifolia,Araceae,Indoor Plant,Foliage,Zamioculcas,zamiifolia,Low to Bright,Low,Easy,Yes,No,Extremely hardy indoor plant.
+raven_zz,Raven ZZ Plant,Zamioculcas zamiifolia 'Raven',Araceae,Indoor Plant,Foliage,Zamioculcas,zamiifolia,Low to Bright,Low,Easy,Yes,No,Black glossy foliage.
+peace_lily,Peace Lily,Spathiphyllum wallisii,Araceae,Indoor Plant,Flowering,Spathiphyllum,wallisii,Low to Bright,Medium,Easy,Yes,No,Popular flowering indoor plant.
+domino_peace_lily,Domino Peace Lily,Spathiphyllum 'Domino',Araceae,Indoor Plant,Flowering,Spathiphyllum,wallisii,Bright Indirect,Medium,Easy,Yes,No,White variegated foliage.
+spider_plant,Spider Plant,Chlorophytum comosum,Asparagaceae,Indoor Plant,Foliage,Chlorophytum,comosum,Bright Indirect,Medium,Easy,Yes,Yes,Excellent beginner plant.
+monstera_deliciosa,Monstera Deliciosa,Monstera deliciosa,Araceae,Indoor Plant,Foliage,Monstera,deliciosa,Bright Indirect,Medium,Easy,Yes,No,Large split-leaf tropical plant.
+monstera_adansonii,Monstera Adansonii,Monstera adansonii,Araceae,Indoor Plant,Climber,Monstera,adansonii,Bright Indirect,Medium,Medium,Yes,No,Swiss cheese vine with perforated leaves.
+philodendron_heartleaf,Heartleaf Philodendron,Philodendron hederaceum,Araceae,Indoor Plant,Climber,Philodendron,hederaceum,Bright Indirect,Medium,Easy,Yes,No,Popular trailing indoor vine.
+philodendron_brasil,Philodendron Brasil,Philodendron hederaceum 'Brasil',Araceae,Indoor Plant,Foliage,Philodendron,hederaceum,Bright Indirect,Medium,Easy,Yes,No,Green and yellow variegated leaves.
+philodendron_birkin,Philodendron Birkin,Philodendron 'Birkin',Araceae,Indoor Plant,Foliage,Philodendron,Birkin,Bright Indirect,Medium,Medium,Yes,No,White striped foliage.
+philodendron_imperial_green,Philodendron Imperial Green,Philodendron erubescens,Araceae,Indoor Plant,Foliage,Philodendron,erubescens,Bright Indirect,Medium,Easy,Yes,No,Large glossy green leaves.
+philodendron_imperial_red,Philodendron Imperial Red,Philodendron erubescens 'Imperial Red',Araceae,Indoor Plant,Foliage,Philodendron,erubescens,Bright Indirect,Medium,Medium,Yes,No,Dark burgundy foliage.
+philodendron_selloum,Philodendron Selloum,Thaumatophyllum bipinnatifidum,Araceae,Indoor Plant,Foliage,Thaumatophyllum,bipinnatifidum,Bright Indirect,Medium,Medium,Yes,No,Large deeply lobed leaves.
+aglaonema_silver_bay,Aglaonema Silver Bay,Aglaonema 'Silver Bay',Araceae,Indoor Plant,Foliage,Aglaonema,Silver Bay,Low to Bright,Medium,Easy,Yes,No,Chinese evergreen with silver leaves.
+aglaonema_red,Red Aglaonema,Aglaonema commutatum,Araceae,Indoor Plant,Foliage,Aglaonema,commutatum,Low to Bright,Medium,Easy,Yes,No,Red and green ornamental foliage.
+aglaonema_pink,Pink Aglaonema,Aglaonema 'Pink Dalmatian',Araceae,Indoor Plant,Foliage,Aglaonema,Pink Dalmatian,Bright Indirect,Medium,Easy,Yes,No,Pink speckled leaves.
+dieffenbachia_camille,Dieffenbachia Camille,Dieffenbachia seguine 'Camille',Araceae,Indoor Plant,Foliage,Dieffenbachia,seguine,Bright Indirect,Medium,Easy,Yes,No,Cream-centered decorative foliage.
+dieffenbachia_tropic_snow,Dieffenbachia Tropic Snow,Dieffenbachia seguine,Araceae,Indoor Plant,Foliage,Dieffenbachia,seguine,Bright Indirect,Medium,Easy,Yes,No,Large variegated leaves.
+croton_petra,Croton Petra,Codiaeum variegatum 'Petra',Euphorbiaceae,Indoor Plant,Foliage,Codiaeum,variegatum,Bright Light,Medium,Medium,No,No,Colorful ornamental foliage.
+croton_gold_dust,Croton Gold Dust,Codiaeum variegatum 'Gold Dust',Euphorbiaceae,Indoor Plant,Foliage,Codiaeum,variegatum,Bright Light,Medium,Medium,No,No,Yellow speckled leaves.
+rubber_plant,Rubber Plant,Ficus elastica,Moraceae,Indoor Plant,Foliage,Ficus,elastica,Bright Indirect,Medium,Easy,Yes,No,Glossy broad-leaf indoor tree.
+rubber_burgundy,Rubber Plant Burgundy,Ficus elastica 'Burgundy',Moraceae,Indoor Plant,Foliage,Ficus,elastica,Bright Indirect,Medium,Easy,Yes,No,Dark burgundy foliage.
+fiddle_leaf_fig,Fiddle Leaf Fig,Ficus lyrata,Moraceae,Indoor Plant,Foliage,Ficus,lyrata,Bright Indirect,Medium,Medium,Yes,No,Large violin-shaped leaves.
+dracaena_marginata,Dracaena Marginata,Dracaena marginata,Asparagaceae,Indoor Plant,Foliage,Dracaena,marginata,Bright Indirect,Low,Easy,Yes,No,Narrow arching leaves with red edges.
+dracaena_fragrans,Dracaena Fragrans,Dracaena fragrans,Asparagaceae,Indoor Plant,Foliage,Dracaena,fragrans,Low to Bright,Low,Easy,Yes,No,Corn plant with attractive striped foliage.
+dracaena_compacta,Dracaena Compacta,Dracaena compacta,Asparagaceae,Indoor Plant,Foliage,Dracaena,compacta,Low to Bright,Low,Easy,Yes,No,Compact slow-growing indoor plant.
+lucky_bamboo,Lucky Bamboo,Dracaena sanderiana,Asparagaceae,Indoor Plant,Feng Shui,Dracaena,sanderiana,Bright Indirect,Medium,Easy,Yes,No,Popular Feng Shui lucky plant.
+areca_palm,Areca Palm,Dypsis lutescens,Arecaceae,Indoor Plant,Palm,Dypsis,lutescens,Bright Indirect,Medium,Easy,Yes,Yes,Elegant indoor palm.
+parlor_palm,Parlor Palm,Chamaedorea elegans,Arecaceae,Indoor Plant,Palm,Chamaedorea,elegans,Low to Bright,Medium,Easy,Yes,Yes,Compact shade-loving palm.
+kentia_palm,Kentia Palm,Howea forsteriana,Arecaceae,Indoor Plant,Palm,Howea,forsteriana,Bright Indirect,Medium,Medium,Yes,Yes,Graceful premium indoor palm.
+boston_fern,Boston Fern,Nephrolepis exaltata,Lomariopsidaceae,Indoor Plant,Fern,Nephrolepis,exaltata,Bright Indirect,High,Medium,Yes,Yes,Lush arching fern for humid interiors.
+calathea_orbifolia,Calathea Orbifolia,Goeppertia orbifolia,Marantaceae,Indoor Plant,Foliage,Goeppertia,orbifolia,Bright Indirect,High,Medium,Yes,No,Large silver-striped foliage.
+calathea_makoyana,Calathea Makoyana,Goeppertia makoyana,Marantaceae,Indoor Plant,Foliage,Goeppertia,makoyana,Bright Indirect,High,Medium,Yes,No,Peacock patterned leaves.
+calathea_medallion,Calathea Medallion,Goeppertia veitchiana,Marantaceae,Indoor Plant,Foliage,Goeppertia,veitchiana,Bright Indirect,High,Medium,Yes,No,Round decorative foliage.
+calathea_rattlesnake,Calathea Rattlesnake,Goeppertia lancifolia,Marantaceae,Indoor Plant,Foliage,Goeppertia,lancifolia,Bright Indirect,High,Medium,Yes,No,Long wavy patterned leaves.
+maranta_red,Red Prayer Plant,Maranta leuconeura var. erythroneura,Marantaceae,Indoor Plant,Foliage,Maranta,leuconeura,Bright Indirect,High,Medium,Yes,No,Leaves fold at night.
+maranta_lemon,Lemon Lime Prayer Plant,Maranta leuconeura 'Lemon Lime',Marantaceae,Indoor Plant,Foliage,Maranta,leuconeura,Bright Indirect,High,Medium,Yes,No,Bright lime veined foliage.
+fittonia_white,White Nerve Plant,Fittonia albivenis,Acanthaceae,Indoor Plant,Foliage,Fittonia,albivenis,Bright Indirect,High,Medium,Yes,No,White veined miniature foliage.
+fittonia_red,Red Nerve Plant,Fittonia albivenis,Acanthaceae,Indoor Plant,Foliage,Fittonia,albivenis,Bright Indirect,High,Medium,Yes,No,Red veined foliage.
+fittonia_pink,Pink Nerve Plant,Fittonia albivenis,Acanthaceae,Indoor Plant,Foliage,Fittonia,albivenis,Bright Indirect,High,Medium,Yes,No,Pink veined compact plant.
+syngonium_white,White Butterfly Syngonium,Syngonium podophyllum,Araceae,Indoor Plant,Foliage,Syngonium,podophyllum,Bright Indirect,Medium,Easy,Yes,No,Arrowhead vine.
+syngonium_pink,Pink Syngonium,Syngonium podophyllum 'Neon',Araceae,Indoor Plant,Foliage,Syngonium,podophyllum,Bright Indirect,Medium,Easy,Yes,No,Pink arrowhead foliage.
+syngonium_albo,Syngonium Albo,Syngonium podophyllum 'Albo',Araceae,Indoor Plant,Foliage,Syngonium,podophyllum,Bright Indirect,Medium,Medium,Yes,No,White variegated leaves.
+peperomia_obtusifolia,Baby Rubber Plant,Peperomia obtusifolia,Piperaceae,Indoor Plant,Foliage,Peperomia,obtusifolia,Bright Indirect,Low,Easy,Yes,No,Glossy succulent foliage.
+peperomia_argyreia,Watermelon Peperomia,Peperomia argyreia,Piperaceae,Indoor Plant,Foliage,Peperomia,argyreia,Bright Indirect,Medium,Easy,Yes,No,Watermelon patterned leaves.
+peperomia_caperata,Ripple Peperomia,Peperomia caperata,Piperaceae,Indoor Plant,Foliage,Peperomia,caperata,Bright Indirect,Medium,Easy,Yes,No,Ripple textured foliage.
+pilea_peperomioides,Chinese Money Plant,Pilea peperomioides,Urticaceae,Indoor Plant,Foliage,Pilea,peperomioides,Bright Indirect,Medium,Easy,Yes,No,Round coin-shaped leaves.
+pilea_moon_valley,Moon Valley Pilea,Pilea mollis,Urticaceae,Indoor Plant,Foliage,Pilea,mollis,Bright Indirect,Medium,Easy,Yes,No,Deep textured foliage.
+english_ivy,English Ivy,Hedera helix,Araliaceae,Indoor Plant,Climber,Hedera,helix,Bright Indirect,Medium,Easy,Yes,No,Classic trailing vine.
+algerian_ivy,Algerian Ivy,Hedera canariensis,Araliaceae,Indoor Plant,Climber,Hedera,canariensis,Bright Indirect,Medium,Easy,Yes,No,Large leaf ivy.
+hoya_carnosa,Wax Plant,Hoya carnosa,Apocynaceae,Indoor Plant,Flowering,Hoya,carnosa,Bright Indirect,Low,Easy,Yes,No,Waxy fragrant flowers.
+hoya_krimson_queen,Hoya Krimson Queen,Hoya carnosa 'Krimson Queen',Apocynaceae,Indoor Plant,Foliage,Hoya,carnosa,Bright Indirect,Low,Medium,Yes,No,Variegated wax plant.
+hoya_pubicalyx,Hoya Pubicalyx,Hoya pubicalyx,Apocynaceae,Indoor Plant,Flowering,Hoya,pubicalyx,Bright Indirect,Low,Medium,Yes,No,Star-shaped flowers.
+anthurium_andraeanum,Flamingo Lily,Anthurium andraeanum,Araceae,Indoor Plant,Flowering,Anthurium,andraeanum,Bright Indirect,Medium,Medium,Yes,No,Glossy leaves with colorful spathes.
+anthurium_clarinervium,Anthurium Clarinervium,Anthurium clarinervium,Araceae,Indoor Plant,Foliage,Anthurium,clarinervium,Bright Indirect,Medium,Medium,Yes,No,Velvety heart-shaped leaves.
+alocasia_amazonica,Alocasia Amazonica,Alocasia × amazonica,Araceae,Indoor Plant,Foliage,Alocasia,amazonica,Bright Indirect,Medium,Medium,Yes,No,Dramatic dark foliage.
+alocasia_polly,Alocasia Polly,Alocasia × amazonica 'Polly',Araceae,Indoor Plant,Foliage,Alocasia,amazonica,Bright Indirect,Medium,Medium,Yes,No,Compact African mask plant.
+alocasia_zebrina,Alocasia Zebrina,Alocasia zebrina,Araceae,Indoor Plant,Foliage,Alocasia,zebrina,Bright Indirect,Medium,Medium,Yes,No,Zebra-striped stems.
+colocasia_esculenta,Elephant Ear,Colocasia esculenta,Araceae,Tropical Plant,Foliage,Colocasia,esculenta,Full Sun,High,Easy,No,Yes,Large ornamental leaves.
+begonia_maculata,Polka Dot Begonia,Begonia maculata,Begoniaceae,Indoor Plant,Foliage,Begonia,maculata,Bright Indirect,Medium,Medium,Yes,No,Silver spotted leaves.
+begonia_rex,Rex Begonia,Begonia rex,Begoniaceae,Indoor Plant,Foliage,Begonia,rex,Bright Indirect,Medium,Medium,Yes,No,Highly colorful foliage.
+tradescantia_zebrina,Tradescantia Zebrina,Tradescantia zebrina,Commelinaceae,Indoor Plant,Trailing,Tradescantia,zebrina,Bright Indirect,Medium,Easy,Yes,No,Purple striped trailing plant.
+tradescantia_nanouk,Tradescantia Nanouk,Tradescantia albiflora 'Nanouk',Commelinaceae,Indoor Plant,Trailing,Tradescantia,albiflora,Bright Indirect,Medium,Easy,Yes,No,Pink and green variegated foliage.
+tradescantia_pallida,Purple Heart,Tradescantia pallida,Commelinaceae,Outdoor Plant,Ground Cover,Tradescantia,pallida,Full Sun,Low,Easy,No,Yes,Purple ornamental ground cover.
+oxalis_triangularis,Purple Shamrock,Oxalis triangularis,Oxalidaceae,Indoor Plant,Foliage,Oxalis,triangularis,Bright Indirect,Medium,Easy,Yes,No,Butterfly-like purple leaves.
+chlorophytum_variegatum,Variegated Spider Plant,Chlorophytum comosum 'Variegatum',Asparagaceae,Indoor Plant,Foliage,Chlorophytum,comosum,Bright Indirect,Medium,Easy,Yes,Yes,Classic air-purifying plant.
+chlorophytum_vittatum,Spider Plant Vittatum,Chlorophytum comosum 'Vittatum',Asparagaceae,Indoor Plant,Foliage,Chlorophytum,comosum,Bright Indirect,Medium,Easy,Yes,Yes,White striped foliage.
+aspidistra_elatior,Cast Iron Plant,Aspidistra elatior,Asparagaceae,Indoor Plant,Foliage,Aspidistra,elatior,Low Light,Low,Easy,Yes,No,Extremely tough indoor plant.
+spathiphyllum_sensation,Peace Lily Sensation,Spathiphyllum 'Sensation',Araceae,Indoor Plant,Flowering,Spathiphyllum,Sensation,Bright Indirect,Medium,Medium,Yes,No,Largest peace lily cultivar.
+spathiphyllum_picasso,Peace Lily Picasso,Spathiphyllum 'Picasso',Araceae,Indoor Plant,Foliage,Spathiphyllum,Picasso,Bright Indirect,Medium,Medium,Yes,No,Rare variegated peace lily.
+ficus_benjamina,Weeping Fig,Ficus benjamina,Moraceae,Indoor Plant,Tree,Ficus,benjamina,Bright Indirect,Medium,Medium,Yes,No,Classic indoor tree.
+ficus_microcarpa,Ficus Ginseng,Ficus microcarpa,Moraceae,Bonsai,Bonsai,Ficus,microcarpa,Bright Indirect,Medium,Medium,Yes,No,Popular bonsai species.
+ficus_altissima,Ficus Altissima,Ficus altissima,Moraceae,Indoor Plant,Foliage,Ficus,altissima,Bright Indirect,Medium,Medium,Yes,No,Yellow-green variegated foliage.
+ficus_audrey,Ficus Audrey,Ficus benghalensis,Moraceae,Indoor Plant,Tree,Ficus,benghalensis,Bright Indirect,Medium,Medium,Yes,No,Indian banyan grown indoors.
+schefflera_arboricola,Dwarf Umbrella Tree,Schefflera arboricola,Araliaceae,Indoor Plant,Tree,Schefflera,arboricola,Bright Indirect,Medium,Easy,Yes,No,Umbrella-shaped foliage.
+schefflera_actinophylla,Umbrella Tree,Schefflera actinophylla,Araliaceae,Indoor Plant,Tree,Schefflera,actinophylla,Bright Indirect,Medium,Medium,Yes,No,Tall tropical ornamental.
+nolina_recurvata,Ponytail Palm,Beaucarnea recurvata,Asparagaceae,Succulent,Caudiciform,Beaucarnea,recurvata,Bright Light,Low,Easy,Yes,No,Swollen trunk stores water.
+yucca_elephantipes,Spineless Yucca,Yucca elephantipes,Asparagaceae,Indoor Plant,Tree,Yucca,elephantipes,Bright Light,Low,Easy,Yes,No,Architectural foliage plant.
+dracaena_reflexa,Song of India,Dracaena reflexa,Asparagaceae,Indoor Plant,Foliage,Dracaena,reflexa,Bright Indirect,Medium,Easy,Yes,No,Yellow-edged narrow leaves.
+dracaena_surculosa,Gold Dust Dracaena,Dracaena surculosa,Asparagaceae,Indoor Plant,Foliage,Dracaena,surculosa,Bright Indirect,Medium,Easy,Yes,No,Yellow spotted foliage.
+chamaedorea_seifrizii,Bamboo Palm,Chamaedorea seifrizii,Arecaceae,Indoor Plant,Palm,Chamaedorea,seifrizii,Bright Indirect,Medium,Easy,Yes,Yes,Excellent indoor air purifier.
+rhapis_excelsa,Lady Palm,Rhapis excelsa,Arecaceae,Indoor Plant,Palm,Rhapis,excelsa,Bright Indirect,Medium,Medium,Yes,Yes,Elegant fan palm.
+livistona_chinensis,Chinese Fan Palm,Livistona chinensis,Arecaceae,Palm,Palm,Livistona,chinensis,Full Sun,Medium,Medium,No,Yes,Slow growing landscape palm.
+phoenix_roebelenii,Pygmy Date Palm,Phoenix roebelenii,Arecaceae,Palm,Palm,Phoenix,roebelenii,Full Sun,Medium,Medium,No,Yes,Compact ornamental palm.
+caryota_mitis,Fishtail Palm,Caryota mitis,Arecaceae,Palm,Palm,Caryota,mitis,Bright Indirect,Medium,Medium,No,Yes,Distinct fishtail shaped leaves.
+dypsis_decaryi,Triangle Palm,Dypsis decaryi,Arecaceae,Palm,Palm,Dypsis,decaryi,Full Sun,Medium,Medium,No,Yes,Unique triangular trunk arrangement.
+neoregelia_carolinae,Blushing Bromeliad,Neoregelia carolinae,Bromeliaceae,Bromeliad,Bromeliad,Neoregelia,carolinae,Bright Indirect,Medium,Easy,Yes,No,Rosy central rosette.
+guzmania_lingulata,Guzmania,Guzmania lingulata,Bromeliaceae,Bromeliad,Bromeliad,Guzmania,lingulata,Bright Indirect,Medium,Easy,Yes,No,Long-lasting colorful bracts.
+vriesea_splendens,Flaming Sword,Vriesea splendens,Bromeliaceae,Bromeliad,Bromeliad,Vriesea,splendens,Bright Indirect,Medium,Medium,Yes,No,Striped leaves with red flower spike.
+aechmea_fasciata,Silver Vase Plant,Aechmea fasciata,Bromeliaceae,Bromeliad,Bromeliad,Aechmea,fasciata,Bright Indirect,Medium,Medium,Yes,No,Silver foliage and pink bloom.
+cryptanthus_bivittatus,Earth Star,Cryptanthus bivittatus,Bromeliaceae,Bromeliad,Bromeliad,Cryptanthus,bivittatus,Bright Indirect,Medium,Easy,Yes,No,Star-shaped colorful rosette.
+phalaenopsis_white,Moth Orchid White,Phalaenopsis amabilis,Orchidaceae,Orchid,Flowering,Phalaenopsis,amabilis,Bright Indirect,Medium,Medium,Yes,No,Classic white flowering orchid.
+phalaenopsis_pink,Pink Moth Orchid,Phalaenopsis aphrodite,Orchidaceae,Orchid,Flowering,Phalaenopsis,aphrodite,Bright Indirect,Medium,Medium,Yes,No,Long lasting pink blooms.
+phalaenopsis_yellow,Yellow Moth Orchid,Phalaenopsis equestris,Orchidaceae,Orchid,Flowering,Phalaenopsis,equestris,Bright Indirect,Medium,Medium,Yes,No,Compact yellow flowering orchid.
+dendrobium_nobile,Dendrobium Orchid,Dendrobium nobile,Orchidaceae,Orchid,Flowering,Dendrobium,nobile,Bright Indirect,Medium,Medium,Yes,No,Popular cane orchid.
+dendrobium_phalaenopsis,Dendrobium Phalaenopsis,Dendrobium bigibbum,Orchidaceae,Orchid,Flowering,Dendrobium,bigibbum,Bright Indirect,Medium,Medium,Yes,No,Ever-blooming orchid.
+oncidium_sharry_baby,Oncidium Sharry Baby,Oncidium Sharry Baby,Orchidaceae,Orchid,Flowering,Oncidium,Sharry Baby,Bright Indirect,Medium,Medium,Yes,No,Chocolate scented orchid.
+oncidium_twinkle,Oncidium Twinkle,Oncidium Twinkle,Orchidaceae,Orchid,Flowering,Oncidium,Twinkle,Bright Indirect,Medium,Medium,Yes,No,Mini fragrant orchid.
+cattleya_labiata,Cattleya Orchid,Cattleya labiata,Orchidaceae,Orchid,Flowering,Cattleya,labiata,Bright Indirect,Medium,Medium,Yes,No,Large fragrant flowers.
+vanda_coerulea,Blue Vanda,Vanda coerulea,Orchidaceae,Orchid,Flowering,Vanda,coerulea,Bright Light,Medium,Hard,Yes,No,Rare blue orchid.
+vanda_tricolor,Vanda Tricolor,Vanda tricolor,Orchidaceae,Orchid,Flowering,Vanda,tricolor,Bright Light,Medium,Hard,Yes,No,Beautiful tropical orchid.
+cymbidium_ensifolium,Cymbidium Orchid,Cymbidium ensifolium,Orchidaceae,Orchid,Flowering,Cymbidium,ensifolium,Bright Light,Medium,Medium,Yes,No,Cool climate orchid.
+paphiopedilum_insigne,Lady Slipper Orchid,Paphiopedilum insigne,Orchidaceae,Orchid,Flowering,Paphiopedilum,insigne,Bright Indirect,Medium,Medium,Yes,No,Unique slipper flowers.
+miltoniopsis_hybrid,Pansy Orchid,Miltoniopsis hybrid,Orchidaceae,Orchid,Flowering,Miltoniopsis,hybrid,Bright Indirect,Medium,Medium,Yes,No,Pansy-like blooms.
+ludisia_discolor,Jewel Orchid,Ludisia discolor,Orchidaceae,Indoor Plant,Foliage,Ludisia,discolor,Low Light,Medium,Easy,Yes,No,Grown for velvety leaves.
+tillandsia_ionantha,Sky Plant,Tillandsia ionantha,Bromeliaceae,Air Plant,Epiphyte,Tillandsia,ionantha,Bright Indirect,Low,Easy,Yes,No,Popular air plant.
+tillandsia_xerographica,Xerographica,Tillandsia xerographica,Bromeliaceae,Air Plant,Epiphyte,Tillandsia,xerographica,Bright Indirect,Low,Medium,Yes,No,Large silver air plant.
+tillandsia_caput_medusae,Caput Medusae,Tillandsia caput-medusae,Bromeliaceae,Air Plant,Epiphyte,Tillandsia,caput-medusae,Bright Indirect,Low,Easy,Yes,No,Medusa-like foliage.
+tillandsia_bulbosa,Bulbosa Air Plant,Tillandsia bulbosa,Bromeliaceae,Air Plant,Epiphyte,Tillandsia,bulbosa,Bright Indirect,Low,Easy,Yes,No,Bulb-shaped base.
+tillandsia_stricta,Tillandsia Stricta,Tillandsia stricta,Bromeliaceae,Air Plant,Epiphyte,Tillandsia,stricta,Bright Indirect,Low,Easy,Yes,No,Purple flowering air plant.
+platycerium_bifurcatum,Staghorn Fern,Platycerium bifurcatum,Polypodiaceae,Fern,Fern,Platycerium,bifurcatum,Bright Indirect,High,Medium,Yes,No,Mounted ornamental fern.
+adiantum_raddianum,Maidenhair Fern,Adiantum raddianum,Pteridaceae,Fern,Fern,Adiantum,raddianum,Bright Indirect,High,Medium,Yes,No,Delicate fine foliage.
+asplenium_nidus,Birds Nest Fern,Asplenium nidus,Aspleniaceae,Fern,Fern,Asplenium,nidus,Bright Indirect,High,Easy,Yes,No,Broad wavy fronds.
+blechnum_gibbum,Silver Lady Fern,Blechnum gibbum,Blechnaceae,Fern,Fern,Blechnum,gibbum,Bright Indirect,High,Medium,Yes,No,Compact tree fern.
+davallia_fejeensis,Rabbit Foot Fern,Davallia fejeensis,Davalliaceae,Fern,Fern,Davallia,fejeensis,Bright Indirect,High,Medium,Yes,No,Furry rhizomes.
+pteris_cretica,Cretan Brake Fern,Pteris cretica,Pteridaceae,Fern,Fern,Pteris,cretica,Bright Indirect,High,Easy,Yes,No,Variegated fern.
+cyrtomium_falcatum,Japanese Holly Fern,Cyrtomium falcatum,Dryopteridaceae,Fern,Fern,Cyrtomium,falcatum,Bright Indirect,Medium,Easy,Yes,No,Glossy evergreen fronds.
+microsorum_musifolium,Crocodile Fern,Microsorum musifolium,Polypodiaceae,Fern,Fern,Microsorum,musifolium,Bright Indirect,High,Easy,Yes,No,Crocodile patterned foliage.
+selaginella_kraussiana,Spike Moss,Selaginella kraussiana,Selaginellaceae,Fern Ally,Ground Cover,Selaginella,kraussiana,Low Light,High,Easy,Yes,No,Soft moss-like foliage.
+nephrolepis_cordifolia,Tuberous Sword Fern,Nephrolepis cordifolia,Lomariopsidaceae,Fern,Fern,Nephrolepis,cordifolia,Bright Indirect,High,Easy,Yes,No,Hardy ornamental fern.
+haworthia_attenuata,Zebra Haworthia,Haworthiopsis attenuata,Asphodelaceae,Succulent,Succulent,Haworthiopsis,attenuata,Bright Indirect,Low,Easy,Yes,No,White striped succulent.
+haworthia_fasciata,Zebra Plant,Haworthiopsis fasciata,Asphodelaceae,Succulent,Succulent,Haworthiopsis,fasciata,Bright Indirect,Low,Easy,Yes,No,Compact striped succulent.
+haworthia_cooperi,Cooper Haworthia,Haworthia cooperi,Asphodelaceae,Succulent,Succulent,Haworthia,cooperi,Bright Indirect,Low,Easy,Yes,No,Transparent leaf tips.
+haworthia_limifolia,Fairy Washboard,Haworthia limifolia,Asphodelaceae,Succulent,Succulent,Haworthia,limifolia,Bright Indirect,Low,Easy,Yes,No,Ridged textured leaves.
+haworthia_reinwardtii,Haworthia Reinwardtii,Haworthiopsis reinwardtii,Asphodelaceae,Succulent,Succulent,Haworthiopsis,reinwardtii,Bright Indirect,Low,Easy,Yes,No,Upright striped succulent.
+gasteria_bicolor,Gasteria Bicolor, Gasteria bicolor,Asphodelaceae,Succulent,Succulent,Gasteria,bicolor,Bright Indirect,Low,Easy,Yes,No,Thick spotted leaves.
+gasteria_liliputana,Mini Gasteria,Gasteria liliputana,Asphodelaceae,Succulent,Succulent,Gasteria,liliputana,Bright Indirect,Low,Easy,Yes,No,Dwarf succulent.
+gasteria_verrucosa,Ox Tongue,Gasteria verrucosa,Asphodelaceae,Succulent,Succulent,Gasteria,verrucosa,Bright Indirect,Low,Easy,Yes,No,Rough textured foliage.
+aloe_aristata,Lace Aloe,Aristaloe aristata,Asphodelaceae,Succulent,Succulent,Aristaloe,aristata,Bright Light,Low,Easy,Yes,No,Small rosette aloe.
+aloe_brevifolia,Short Leaf Aloe,Aloe brevifolia,Asphodelaceae,Succulent,Succulent,Aloe,brevifolia,Bright Light,Low,Easy,Yes,No,Compact blue aloe.
+aloe_juvenna,Tiger Tooth Aloe,Aloe juvenna,Asphodelaceae,Succulent,Succulent,Aloe,juvenna,Bright Light,Low,Easy,Yes,No,Toothed stacked leaves.
+crassula_perforata,String of Buttons,Crassula perforata,Crassulaceae,Succulent,Succulent,Crassula,perforata,Bright Light,Low,Easy,Yes,No,Stacked geometric leaves.
+crassula_muscosa,Watch Chain Plant,Crassula muscosa,Crassulaceae,Succulent,Succulent,Crassula,muscosa,Bright Light,Low,Easy,Yes,No,Chain-like stems.
+crassula_ovata_gollum,Gollum Jade,Crassula ovata 'Gollum',Crassulaceae,Succulent,Succulent,Crassula,ovata,Bright Light,Low,Easy,Yes,No,Tubular jade leaves.
+crassula_hobbit,Hobbit Jade,Crassula ovata 'Hobbit',Crassulaceae,Succulent,Succulent,Crassula,ovata,Bright Light,Low,Easy,Yes,No,Curled tubular foliage.
+senecio_rowleyanus,String of Pearls,Curio rowleyanus,Asteraceae,Succulent,Trailing,Curio,rowleyanus,Bright Indirect,Low,Medium,Yes,No,Pearl shaped hanging stems.
+senecio_radicans,String of Bananas,Curio radicans,Asteraceae,Succulent,Trailing,Curio,radicans,Bright Indirect,Low,Easy,Yes,No,Banana shaped leaves.
+ceropegia_woodii,String of Hearts,Ceropegia woodii,Apocynaceae,Succulent,Trailing,Ceropegia,woodii,Bright Indirect,Low,Easy,Yes,No,Heart shaped trailing vine.
+sedum_morganianum,Donkey Tail,Sedum morganianum,Crassulaceae,Succulent,Trailing,Sedum,morganianum,Bright Indirect,Low,Medium,Yes,No,Hanging succulent stems.
+sedum_rubrotinctum,Jelly Bean Plant,Sedum rubrotinctum,Crassulaceae,Succulent,Succulent,Sedum,rubrotinctum,Bright Light,Low,Easy,Yes,No,Bean shaped leaves.
+sedum_adolphii,Golden Sedum,Sedum adolphii,Crassulaceae,Succulent,Succulent,Sedum,adolphii,Bright Light,Low,Easy,Yes,No,Golden orange foliage.
+kalanchoe_blossfeldiana,Flaming Katy,Kalanchoe blossfeldiana,Crassulaceae,Succulent,Flowering,Kalanchoe,blossfeldiana,Bright Light,Low,Easy,Yes,No,Popular flowering succulent.
+kalanchoe_tomentosa,Panda Plant,Kalanchoe tomentosa,Crassulaceae,Succulent,Succulent,Kalanchoe,tomentosa,Bright Light,Low,Easy,Yes,No,Fuzzy silver leaves.
+kalanchoe_luciae,Flapjack Plant,Kalanchoe luciae,Crassulaceae,Succulent,Succulent,Kalanchoe,luciae,Bright Light,Low,Easy,Yes,No,Large paddle leaves.
+adromischus_cristatus,Crinkle Leaf Plant,Adromischus cristatus,Crassulaceae,Succulent,Succulent,Adromischus,cristatus,Bright Light,Low,Medium,Yes,No,Wavy edged leaves.
+cotyledon_tomentosa,Bear Paw,Cotyledon tomentosa,Crassulaceae,Succulent,Succulent,Cotyledon,tomentosa,Bright Light,Low,Easy,Yes,No,Fuzzy paw shaped leaves.
+graptopetalum_paraguayense,Ghost Plant,Graptopetalum paraguayense,Crassulaceae,Succulent,Succulent,Graptopetalum,paraguayense,Bright Light,Low,Easy,Yes,No,Silvery rosettes.
+graptosedum_california,California Sunset,Graptosedum 'California Sunset',Crassulaceae,Succulent,Hybrid,Graptosedum,California Sunset,Bright Light,Low,Easy,Yes,No,Orange sunset foliage.
+pachyphytum_oviferum,Moonstone,Pachyphytum oviferum,Crassulaceae,Succulent,Succulent,Pachyphytum,oviferum,Bright Light,Low,Easy,Yes,No,Rounded pastel leaves.
+aeonium_arboreum,Tree Aeonium,Aeonium arboreum,Crassulaceae,Succulent,Succulent,Aeonium,arboreum,Bright Light,Low,Easy,Yes,No,Woody rosette succulent.
+aeonium_zwartkop,Black Rose Aeonium,Aeonium arboreum 'Zwartkop',Crassulaceae,Succulent,Succulent,Aeonium,arboreum,Bright Light,Low,Easy,Yes,No,Dark purple rosettes.
+lithops_lesliei,Living Stone,Lithops lesliei,Aizoaceae,Succulent,Succulent,Lithops,lesliei,Full Sun,Very Low,Medium,Yes,No,Stone mimicking succulent.
+lithops_hookeri,Hookers Lithops,Lithops hookeri,Aizoaceae,Succulent,Succulent,Lithops,hookeri,Full Sun,Very Low,Medium,Yes,No,Patterned living stone.
+lithops_karasmontana,Karas Lithops,Lithops karasmontana,Aizoaceae,Succulent,Succulent,Lithops,karasmontana,Full Sun,Very Low,Medium,Yes,No,Grey patterned succulent.
+fenestraria_rhopalophylla,Baby Toes,Fenestraria rhopalophylla,Aizoaceae,Succulent,Succulent,Fenestraria,rhopalophylla,Full Sun,Very Low,Medium,Yes,No,Window leaf succulent.
+pleiospilos_nelii,Split Rock,Pleiospilos nelii,Aizoaceae,Succulent,Succulent,Pleiospilos,nelii,Full Sun,Very Low,Medium,Yes,No,Large stone-like leaves.
+conophytum_bilobum,Button Plant,Conophytum bilobum,Aizoaceae,Succulent,Succulent,Conophytum,bilobum,Full Sun,Very Low,Medium,Yes,No,Tiny paired leaves.
+euphorbia_obesa,Baseball Plant,Euphorbia obesa,Euphorbiaceae,Succulent,Succulent,Euphorbia,obesa,Full Sun,Very Low,Medium,Yes,No,Spherical cactus-like plant.
+euphorbia_lactea,Dragon Bones,Euphorbia lactea,Euphorbiaceae,Succulent,Succulent,Euphorbia,lactea,Full Sun,Low,Easy,Yes,No,Branched succulent stems.
+euphorbia_trigona,African Milk Tree,Euphorbia trigona,Euphorbiaceae,Succulent,Succulent,Euphorbia,trigona,Full Sun,Low,Easy,Yes,No,Tall architectural succulent.
+mammillaria_elongata,Lady Finger Cactus,Mammillaria elongata,Cactaceae,Cactus,Cactus,Mammillaria,elongata,Full Sun,Very Low,Easy,Yes,No,Golden finger-like stems.
+mammillaria_bocasana,Powder Puff Cactus,Mammillaria bocasana,Cactaceae,Cactus,Cactus,Mammillaria,bocasana,Full Sun,Very Low,Easy,Yes,No,White fuzzy cactus.
+mammillaria_hahniana,Old Lady Cactus,Mammillaria hahniana,Cactaceae,Cactus,Cactus,Mammillaria,hahniana,Full Sun,Very Low,Easy,Yes,No,White hairy globe cactus.
+mammillaria_plumosa,Feather Cactus,Mammillaria plumosa,Cactaceae,Cactus,Cactus,Mammillaria,plumosa,Full Sun,Very Low,Medium,Yes,No,Soft feather-like spines.
+mammillaria_spinosissima,Red Headed Irishman,Mammillaria spinosissima,Cactaceae,Cactus,Cactus,Mammillaria,spinosissima,Full Sun,Very Low,Easy,Yes,No,Dense reddish spines.
+gymnocalycium_mihanovichii,Moon Cactus,Gymnocalycium mihanovichii,Cactaceae,Cactus,Grafted,Gymnocalycium,mihanovichii,Full Sun,Very Low,Easy,Yes,No,Colorful grafted cactus.
+gymnocalycium_baldianum,Dwarf Chin Cactus,Gymnocalycium baldianum,Cactaceae,Cactus,Cactus,Gymnocalycium,baldianum,Full Sun,Very Low,Easy,Yes,No,Red blooming cactus.
+gymnocalycium_horstii,Horst Cactus,Gymnocalycium horstii,Cactaceae,Cactus,Cactus,Gymnocalycium,horstii,Full Sun,Very Low,Easy,Yes,No,White flowering cactus.
+rebutia_minuscula,Orange Crown Cactus,Rebutia minuscula,Cactaceae,Cactus,Cactus,Rebutia,minuscula,Full Sun,Very Low,Easy,Yes,No,Orange flowers.
+rebutia_fiebrigii,Flame Crown Cactus,Rebutia fiebrigii,Cactaceae,Cactus,Cactus,Rebutia,fiebrigii,Full Sun,Very Low,Easy,Yes,No,Bright scarlet flowers.
+echinopsis_oxygona,Easter Lily Cactus,Echinopsis oxygona,Cactaceae,Cactus,Cactus,Echinopsis,oxygona,Full Sun,Very Low,Easy,Yes,No,Large night flowers.
+echinopsis_subdenudata,Domino Cactus,Echinopsis subdenudata,Cactaceae,Cactus,Cactus,Echinopsis,subdenudata,Full Sun,Very Low,Easy,Yes,No,Spineless flowering cactus.
+ferocactus_latispinus,Devils Tongue Barrel,Ferocactus latispinus,Cactaceae,Cactus,Cactus,Ferocactus,latispinus,Full Sun,Very Low,Medium,Yes,No,Wide hooked spines.
+ferocactus_glaucescens,Blue Barrel Cactus,Ferocactus glaucescens,Cactaceae,Cactus,Cactus,Ferocactus,glaucescens,Full Sun,Very Low,Medium,Yes,No,Blue-green barrel cactus.
+echinocactus_platyacanthus,Giant Barrel Cactus,Echinocactus platyacanthus,Cactaceae,Cactus,Cactus,Echinocactus,platyacanthus,Full Sun,Very Low,Medium,Yes,No,Massive barrel cactus.
+parodia_magnifica,Balloon Cactus,Parodia magnifica,Cactaceae,Cactus,Cactus,Parodia,magnifica,Full Sun,Very Low,Easy,Yes,No,Blue round cactus.
+parodia_leninghausii,Golden Ball Cactus,Parodia leninghausii,Cactaceae,Cactus,Cactus,Parodia,leninghausii,Full Sun,Very Low,Easy,Yes,No,Tall golden cactus.
+notocactus_scopa,Silver Ball Cactus,Parodia scopa,Cactaceae,Cactus,Cactus,Parodia,scopa,Full Sun,Very Low,Easy,Yes,No,White spined cactus.
+astrophytum_myriostigma,Bishops Cap,Astrophytum myriostigma,Cactaceae,Cactus,Cactus,Astrophytum,myriostigma,Full Sun,Very Low,Easy,Yes,No,Spineless star cactus.
+astrophytum_asterias,Sand Dollar Cactus,Astrophytum asterias,Cactaceae,Cactus,Cactus,Astrophytum,asterias,Full Sun,Very Low,Medium,Yes,No,Rare flat cactus.
+cereus_peruvianus,Peruvian Apple Cactus,Cereus repandus,Cactaceae,Cactus,Columnar,Cereus,repandus,Full Sun,Low,Easy,Yes,No,Tall column cactus.
+cereus_jamacaru,Mandacaru,Cereus jamacaru,Cactaceae,Cactus,Columnar,Cereus,jamacaru,Full Sun,Low,Easy,Yes,No,Large Brazilian cactus.
+opuntia_microdasys,Bunny Ear Cactus,Opuntia microdasys,Cactaceae,Cactus,Cactus,Opuntia,microdasys,Full Sun,Very Low,Easy,Yes,No,Rabbit ear pads.
+opuntia_ficus_indica,Prickly Pear,Opuntia ficus-indica,Cactaceae,Cactus,Fruit,Opuntia,ficus-indica,Full Sun,Low,Easy,Yes,Yes,Edible cactus fruit.
+opuntia_monacantha,Joseph Coat Cactus,Opuntia monacantha,Cactaceae,Cactus,Cactus,Opuntia,monacantha,Full Sun,Low,Easy,Yes,No,Variegated pads.
+rhipsalis_baccifera,Mistletoe Cactus,Rhipsalis baccifera,Cactaceae,Epiphytic Cactus,Hanging,Rhipsalis,baccifera,Bright Indirect,Low,Easy,Yes,No,Trailing jungle cactus.
+rhipsalis_cassutha,Spaghetti Cactus,Rhipsalis cassutha,Cactaceae,Epiphytic Cactus,Hanging,Rhipsalis,cassutha,Bright Indirect,Low,Easy,Yes,No,Thin cascading stems.
+schlumbergera_truncata,Christmas Cactus,Schlumbergera truncata,Cactaceae,Epiphytic Cactus,Flowering,Schlumbergera,truncata,Bright Indirect,Low,Easy,Yes,No,Winter blooming cactus.
+hatiora_gaertneri,Easter Cactus,Hatiora gaertneri,Cactaceae,Epiphytic Cactus,Flowering,Hatiora,gaertneri,Bright Indirect,Low,Easy,Yes,No,Spring blooming cactus.
+epiphyllum_oxypetalum,Queen of the Night,Epiphyllum oxypetalum,Cactaceae,Epiphytic Cactus,Flowering,Epiphyllum,oxypetalum,Bright Indirect,Medium,Easy,Yes,No,Night blooming fragrant flowers.
+aporocactus_flagelliformis,Rat Tail Cactus,Disocactus flagelliformis,Cactaceae,Epiphytic Cactus,Hanging,Disocactus,flagelliformis,Bright Indirect,Low,Easy,Yes,No,Trailing stems with pink flowers.
+cleistocactus_strausii,Silver Torch Cactus,Cleistocactus strausii,Cactaceae,Cactus,Columnar,Cleistocactus,strausii,Full Sun,Very Low,Medium,Yes,No,Silvery white column cactus.
+cephalocereus_senilis,Old Man Cactus,Cephalocereus senilis,Cactaceae,Cactus,Columnar,Cephalocereus,senilis,Full Sun,Very Low,Medium,Yes,No,Long white hairy stems.
+espostoa_lanata,Peruvian Old Lady,Espostoa lanata,Cactaceae,Cactus,Columnar,Espostoa,lanata,Full Sun,Very Low,Medium,Yes,No,Woolly cactus.
+melocactus_matanzanus,Turks Cap Cactus,Melocactus matanzanus,Cactaceae,Cactus,Cactus,Melocactus,matanzanus,Full Sun,Very Low,Medium,Yes,No,Distinctive cephalium.
+copiapoa_cinerea,Copiapoa,Copiapoa cinerea,Cactaceae,Cactus,Cactus,Copiapoa,cinerea,Full Sun,Very Low,Hard,Yes,No,Rare gray cactus.
+ariocarpus_fissuratus,Living Rock Cactus,Ariocarpus fissuratus,Cactaceae,Cactus,Rare,Ariocarpus,fissuratus,Full Sun,Very Low,Hard,Yes,No,Highly collectible species.
+lophophora_williamsii,Peyote Cactus,Lophophora williamsii,Cactaceae,Cactus,Rare,Lophophora,williamsii,Full Sun,Very Low,Hard,No,No,Protected species.
+stenocactus_crispatus,Brain Cactus,Stenocactus crispatus,Cactaceae,Cactus,Cactus,Stenocactus,crispatus,Full Sun,Very Low,Medium,Yes,No,Wavy ribbed cactus.
+guzmania_lingulata,Guzmania,Guzmania lingulata,Bromeliaceae,Bromeliad,Flowering,Guzmania,lingulata,Bright Indirect,Medium,Easy,Yes,No,Popular indoor bromeliad.
+vriesea_splendens,Flaming Sword,Vriesea splendens,Bromeliaceae,Bromeliad,Flowering,Vriesea,splendens,Bright Indirect,Medium,Easy,Yes,No,Flat red flower spike.
+aechmea_fasciata,Silver Vase,Aechmea fasciata,Bromeliaceae,Bromeliad,Flowering,Aechmea,fasciata,Bright Indirect,Medium,Easy,Yes,No,Silver striped foliage.
+neoregelia_carolinae,Blushing Bromeliad,Neoregelia carolinae,Bromeliaceae,Bromeliad,Foliage,Neoregelia,carolinae,Bright Indirect,Medium,Easy,Yes,No,Center turns bright red.
+billbergia_nutans,Queens Tears,Billbergia nutans,Bromeliaceae,Bromeliad,Flowering,Billbergia,nutans,Bright Indirect,Medium,Easy,Yes,No,Pink dangling flowers.
+cryptanthus_bivittatus,Earth Star,Cryptanthus bivittatus,Bromeliaceae,Bromeliad,Foliage,Cryptanthus,bivittatus,Bright Indirect,Medium,Easy,Yes,No,Ground-growing bromeliad.
+ananas_comosus_ornamental,Ornamental Pineapple,Ananas comosus,Bromeliaceae,Fruit Plant,Tropical,Ananas,comosus,Full Sun,Medium,Easy,Yes,Yes,Decorative pineapple.
+agave_attenuata,Foxtail Agave,Agave attenuata,Asparagaceae,Succulent,Agave,Agave,attenuata,Full Sun,Low,Easy,Yes,No,Spineless agave.
+agave_victoriae_reginae,Queen Victoria Agave,Agave victoriae-reginae,Asparagaceae,Succulent,Agave,Agave,victoriae-reginae,Full Sun,Low,Medium,Yes,No,Compact ornamental agave.
+agave_americana,Century Plant,Agave americana,Asparagaceae,Succulent,Agave,Agave,americana,Full Sun,Low,Easy,Yes,No,Large blue-green rosette.
+agave_parryi,Parry Agave,Agave parryi,Asparagaceae,Succulent,Agave,Agave,parryi,Full Sun,Low,Medium,Yes,No,Cold hardy agave.
+yucca_elephantipes,Spineless Yucca,Yucca elephantipes,Asparagaceae,Indoor Plant,Tree,Yucca,elephantipes,Bright Light,Low,Easy,Yes,No,Indoor tree form.
+yucca_rostrata,Blue Yucca,Yucca rostrata,Asparagaceae,Outdoor Plant,Tree,Yucca,rostrata,Full Sun,Low,Medium,Yes,No,Blue narrow foliage.
+yucca_filamentosa,Adam Needle,Yucca filamentosa,Asparagaceae,Outdoor Plant,Shrub,Yucca,filamentosa,Full Sun,Low,Easy,Yes,No,Hardy flowering yucca.
+cordyline_fruticosa_red,Red Ti Plant,Cordyline fruticosa,Asparagaceae,Foliage Plant,Tropical,Cordyline,fruticosa,Bright Indirect,Medium,Easy,Yes,No,Red tropical foliage.
+cordyline_fruticosa_green,Green Ti Plant,Cordyline fruticosa,Asparagaceae,Foliage Plant,Tropical,Cordyline,fruticosa,Bright Indirect,Medium,Easy,Yes,No,Green foliage variety.
+cordyline_australis,Cabbage Palm,Cordyline australis,Asparagaceae,Outdoor Plant,Tree,Cordyline,australis,Full Sun,Medium,Easy,Yes,No,Palm-like ornamental.
+dracaena_marginata_bicolor,Dragon Tree Bicolor,Dracaena marginata,Asparagaceae,Indoor Plant,Foliage,Dracaena,marginata,Bright Indirect,Low,Easy,Yes,No,Bicolor foliage.
+dracaena_marginata_tricolor,Dragon Tree Tricolor,Dracaena marginata,Asparagaceae,Indoor Plant,Foliage,Dracaena,marginata,Bright Indirect,Low,Easy,Yes,No,Three-colored leaves.
+dracaena_massangeana,Corn Plant,Dracaena fragrans,Asparagaceae,Indoor Plant,Foliage,Dracaena,fragrans,Bright Indirect,Low,Easy,Yes,No,Yellow center stripe.
+dracaena_reflexa_song_of_india,Song of India,Dracaena reflexa,Asparagaceae,Indoor Plant,Foliage,Dracaena,reflexa,Bright Indirect,Low,Easy,Yes,No,Variegated narrow leaves.
+dracaena_reflexa_song_of_jamaica,Song of Jamaica,Dracaena reflexa,Asparagaceae,Indoor Plant,Foliage,Dracaena,reflexa,Bright Indirect,Low,Easy,Yes,No,Dark green foliage.
+dracaena_surculosa,Gold Dust Dracaena,Dracaena surculosa,Asparagaceae,Indoor Plant,Foliage,Dracaena,surculosa,Bright Indirect,Medium,Easy,Yes,No,Spotted leaves.
+cycas_revoluta,Sago Palm,Cycas revoluta,Cycadaceae,Cycad,Palm,Cycas,revoluta,Full Sun,Low,Easy,Yes,No,Ancient cycad species.
+cycas_rumphii,Queen Sago,Cycas rumphii,Cycadaceae,Cycad,Palm,Cycas,rumphii,Full Sun,Low,Medium,Yes,No,Tropical cycad.
+beaucarnea_recurvata,Ponytail Palm,Beaucarnea recurvata,Asparagaceae,Indoor Plant,Tree,Beaucarnea,recurvata,Bright Light,Low,Easy,Yes,No,Swollen trunk water storage.
+pandanus_veitchii,Variegated Screw Pine,Pandanus veitchii,Pandanaceae,Tropical Plant,Foliage,Pandanus,veitchii,Bright Light,Medium,Medium,Yes,No,White striped leaves.
+pandanus_amaryllifolius,Pandan Leaf,Pandanus amaryllifolius,Pandanaceae,Herb,Culinary,Pandanus,amaryllifolius,Bright Indirect,Medium,Easy,Yes,Yes,Fragrant edible leaves.
+sansevieria_moonshine,Moonshine Snake Plant,Dracaena trifasciata,Asparagaceae,Indoor Plant,Foliage,Dracaena,trifasciata,Low Light,Low,Easy,Yes,No,Silver-green foliage.
+sansevieria_whale_fin,Whale Fin Snake Plant,Dracaena masoniana,Asparagaceae,Indoor Plant,Foliage,Dracaena,masoniana,Low Light,Low,Easy,Yes,No,Massive single leaf.
+sansevieria_cylindrica,African Spear Plant,Dracaena angolensis,Asparagaceae,Indoor Plant,Foliage,Dracaena,angolensis,Bright Indirect,Low,Easy,Yes,No,Cylindrical leaves.
+sansevieria_bantel_sensation,Bantel Sensation,Dracaena trifasciata,Asparagaceae,Indoor Plant,Foliage,Dracaena,trifasciata,Bright Indirect,Low,Easy,Yes,No,Vertical white stripes.
+sansevieria_black_gold,Black Gold Snake Plant,Dracaena trifasciata,Asparagaceae,Indoor Plant,Foliage,Dracaena,trifasciata,Low Light,Low,Easy,Yes,No,Dark leaves with golden margins.
+sansevieria_futura_superba,Futura Superba,Dracaena trifasciata,Asparagaceae,Indoor Plant,Foliage,Dracaena,trifasciata,Low Light,Low,Easy,Yes,No,Compact rosette variety.
+sansevieria_laurentii,Snake Plant Laurentii,Dracaena trifasciata,Asparagaceae,Indoor Plant,Foliage,Dracaena,trifasciata,Low Light,Low,Easy,Yes,No,Yellow-edged classic variety.
+chlorophytum_vittatum,Variegated Spider Plant,Chlorophytum comosum,Asparagaceae,Indoor Plant,Foliage,Chlorophytum,comosum,Bright Indirect,Medium,Easy,Yes,No,White-striped spider plant.
+chlorophytum_bonnie,Bonnie Spider Plant,Chlorophytum comosum,Asparagaceae,Indoor Plant,Foliage,Chlorophytum,comosum,Bright Indirect,Medium,Easy,Yes,No,Curly spider plant.
+chlorophytum_ocean,Ocean Spider Plant,Chlorophytum comosum,Asparagaceae,Indoor Plant,Foliage,Chlorophytum,comosum,Bright Indirect,Medium,Easy,Yes,No,Dwarf compact variety.
+ophiopogon_japonicus,Mondo Grass,Ophiopogon japonicus,Asparagaceae,Ground Cover,Foliage,Ophiopogon,japonicus,Partial Shade,Medium,Easy,Yes,No,Grass-like ornamental.
+liriope_muscari,Lily Turf,Liriope muscari,Asparagaceae,Ground Cover,Foliage,Liriope,muscari,Partial Shade,Medium,Easy,Yes,No,Purple flower spikes.
+ficus_elastica,Rubber Plant,Ficus elastica,Moraceae,Indoor Plant,Foliage,Ficus,elastica,Bright Indirect,Medium,Easy,Yes,No,Classic rubber plant.
+ficus_elastica_burgundy,Burgundy Rubber Plant,Ficus elastica,Moraceae,Indoor Plant,Foliage,Ficus,elastica,Bright Indirect,Medium,Easy,Yes,No,Dark burgundy foliage.
+ficus_elastica_tineke,Tineke Rubber Plant,Ficus elastica,Moraceae,Indoor Plant,Variegated,Ficus,elastica,Bright Indirect,Medium,Easy,Yes,No,Cream variegated leaves.
+ficus_elastica_ruby,Ruby Rubber Plant,Ficus elastica,Moraceae,Indoor Plant,Variegated,Ficus,elastica,Bright Indirect,Medium,Easy,Yes,No,Pink variegated foliage.
+ficus_lyrata,Fiddle Leaf Fig,Ficus lyrata,Moraceae,Indoor Plant,Foliage,Ficus,lyrata,Bright Indirect,Medium,Medium,Yes,No,Large violin-shaped leaves.
+ficus_lyrata_bambino,Fiddle Leaf Bambino,Ficus lyrata,Moraceae,Indoor Plant,Dwarf,Ficus,lyrata,Bright Indirect,Medium,Easy,Yes,No,Compact fiddle leaf fig.
+ficus_benjamina,Weeping Fig,Ficus benjamina,Moraceae,Indoor Plant,Tree,Ficus,benjamina,Bright Indirect,Medium,Easy,Yes,No,Graceful drooping branches.
+ficus_benjamina_variegata,Variegated Weeping Fig,Ficus benjamina,Moraceae,Indoor Plant,Variegated,Ficus,benjamina,Bright Indirect,Medium,Easy,Yes,No,White edged foliage.
+ficus_microcarpa,Indian Laurel,Ficus microcarpa,Moraceae,Bonsai,Bonsai,Ficus,microcarpa,Bright Light,Medium,Easy,Yes,No,Excellent bonsai species.
+ficus_ginseng,Ginseng Ficus,Ficus microcarpa,Moraceae,Bonsai,Bonsai,Ficus,microcarpa,Bright Light,Medium,Easy,Yes,No,Thick exposed roots.
+ficus_pumila,Creeping Fig,Ficus pumila,Moraceae,Climber,Vine,Ficus,pumila,Bright Indirect,Medium,Easy,Yes,No,Wall climbing vine.
+ficus_religiosa,Peepal,Ficus religiosa,Moraceae,Tree,Sacred,Ficus,religiosa,Full Sun,Medium,Easy,Yes,No,Sacred fig tree.
+ficus_benghalensis,Banyan,Ficus benghalensis,Moraceae,Tree,Shade,Ficus,benghalensis,Full Sun,Medium,Easy,Yes,No,National tree of India.
+ficus_carica,Common Fig,Ficus carica,Moraceae,Fruit Plant,Tree,Ficus,carica,Full Sun,Medium,Easy,Yes,Yes,Edible figs.
+ficus_altissima,Lofty Fig,Ficus altissima,Moraceae,Indoor Tree,Foliage,Ficus,altissima,Bright Indirect,Medium,Easy,Yes,No,Golden green foliage.
+ficus_audrey,Audrey Ficus,Ficus benghalensis,Moraceae,Indoor Tree,Foliage,Ficus,benghalensis,Bright Indirect,Medium,Easy,Yes,No,Velvety green leaves.
+ficus_amstel_king,Alii Fig,Ficus binnendijkii,Moraceae,Indoor Tree,Foliage,Ficus,binnendijkii,Bright Indirect,Medium,Easy,Yes,No,Long narrow leaves.
+ficus_triangularis,Triangle Fig,Ficus triangularis,Moraceae,Indoor Plant,Variegated,Ficus,triangularis,Bright Indirect,Medium,Medium,Yes,No,Triangular variegated foliage.
+schefflera_arboricola,Dwarf Umbrella Tree,Schefflera arboricola,Araliaceae,Indoor Plant,Foliage,Schefflera,arboricola,Bright Indirect,Medium,Easy,Yes,No,Popular office plant.
+schefflera_gold_capella,Gold Capella,Schefflera arboricola,Araliaceae,Indoor Plant,Variegated,Schefflera,arboricola,Bright Indirect,Medium,Easy,Yes,No,Golden variegated leaves.
+schefflera_actinophylla,Umbrella Tree,Schefflera actinophylla,Araliaceae,Tree,Tropical,Schefflera,actinophylla,Bright Light,Medium,Easy,Yes,No,Large umbrella foliage.
+polyscias_fruticosa,Ming Aralia,Polyscias fruticosa,Araliaceae,Indoor Plant,Foliage,Polyscias,fruticosa,Bright Indirect,Medium,Medium,Yes,No,Fine feathery leaves.
+polyscias_scutellaria,Balfour Aralia,Polyscias scutellaria,Araliaceae,Indoor Plant,Foliage,Polyscias,scutellaria,Bright Indirect,Medium,Medium,Yes,No,Rounded foliage.
+polyscias_guilfoylei,Guilfoyle Aralia,Polyscias guilfoylei,Araliaceae,Indoor Plant,Variegated,Polyscias,guilfoylei,Bright Indirect,Medium,Medium,Yes,No,Deeply lobed leaves.
+dizygotheca_elegantissima,False Aralia,Plerandra elegantissima,Araliaceae,Indoor Plant,Foliage,Plerandra,elegantissima,Bright Indirect,Medium,Medium,Yes,No,Narrow serrated foliage.
+hedera_helix,English Ivy,Hedera helix,Araliaceae,Climber,Vine,Hedera,helix,Bright Indirect,Medium,Easy,Yes,No,Evergreen climbing vine.
+hedera_helix_variegata,Variegated English Ivy,Hedera helix,Araliaceae,Climber,Variegated,Hedera,helix,Bright Indirect,Medium,Easy,Yes,No,Cream edged ivy.
+oreopanax_capitatum,Mountain Aralia,Oreopanax capitatus,Araliaceae,Tree,Foliage,Oreopanax,capitatum,Bright Light,Medium,Medium,Yes,No,Tropical foliage tree.
+cussonia_spicata,Cabbage Tree,Cussonia spicata,Araliaceae,Tree,Succulent,Cussonia,spicata,Full Sun,Low,Medium,Yes,No,Thick trunk ornamental.
+dendropanax_trifidus,Dwarf Dendropanax,Dendropanax trifidus,Araliaceae,Indoor Plant,Foliage,Dendropanax,trifidus,Bright Indirect,Medium,Medium,Yes,No,Glossy foliage.
+radermachera_sinica,China Doll Plant,Radermachera sinica,Bignoniaceae,Indoor Plant,Foliage,Radermachera,sinica,Bright Indirect,Medium,Medium,Yes,No,Fine glossy leaves.
+clerodendrum_thomsoniae,Bleeding Heart Vine,Clerodendrum thomsoniae,Lamiaceae,Climber,Flowering,Clerodendrum,thomsoniae,Full Sun,Medium,Easy,Yes,No,White and red flowers.
+clerodendrum_inerme,Seaside Clerodendrum,Clerodendrum inerme,Lamiaceae,Shrub,Hedge,Clerodendrum,inerme,Full Sun,Medium,Easy,Yes,No,Dense evergreen shrub.
+duranta_erecta,Golden Dewdrop,Duranta erecta,Verbenaceae,Shrub,Hedge,Duranta,erecta,Full Sun,Medium,Easy,Yes,No,Golden foliage hedge.
+duranta_gold,Golden Duranta,Duranta erecta,Verbenaceae,Shrub,Foliage,Duranta,erecta,Full Sun,Medium,Easy,Yes,No,Bright golden leaves.
+murraya_paniculata,Orange Jasmine,Murraya paniculata,Rutaceae,Shrub,Flowering,Murraya,paniculata,Full Sun,Medium,Easy,Yes,No,Fragrant white flowers.
+ixora_coccinea,West Indian Jasmine,Ixora coccinea,Rubiaceae,Flowering Plant,Shrub,Ixora,coccinea,Full Sun,Medium,Easy,Yes,No,Cluster flowering shrub.
+gardenia_jasminoides,Gardenia,Gardenia jasminoides,Rubiaceae,Flowering Plant,Shrub,Gardenia,jasminoides,Bright Light,Medium,Medium,Yes,No,Highly fragrant flowers.
+plumeria_rubra,Frangipani,Plumeria rubra,Apocynaceae,Flowering Plant,Tree,Plumeria,rubra,Full Sun,Low,Easy,Yes,No,Highly fragrant tropical flowers.
+plumeria_alba,White Frangipani,Plumeria alba,Apocynaceae,Flowering Plant,Tree,Plumeria,alba,Full Sun,Low,Easy,Yes,No,White fragrant flowers.
+plumeria_obtusa,Singapore Plumeria,Plumeria obtusa,Apocynaceae,Flowering Plant,Tree,Plumeria,obtusa,Full Sun,Medium,Easy,Yes,No,Evergreen frangipani.
+adenium_obesum,Desert Rose,Adenium obesum,Apocynaceae,Succulent,Flowering,Adenium,obesum,Full Sun,Low,Easy,Yes,No,Caudex succulent with colorful flowers.
+adenium_arabicum,Adenium Arabicum,Adenium arabicum,Apocynaceae,Succulent,Flowering,Adenium,arabicum,Full Sun,Low,Medium,Yes,No,Massive caudex form.
+adenium_somalense,Somali Desert Rose,Adenium somalense,Apocynaceae,Succulent,Flowering,Adenium,somalense,Full Sun,Low,Medium,Yes,No,Tall desert rose species.
+adenium_multiflorum,Impala Lily,Adenium multiflorum,Apocynaceae,Succulent,Flowering,Adenium,multiflorum,Full Sun,Low,Medium,Yes,No,Winter flowering species.
+allamanda_cathartica,Golden Trumpet,Allamanda cathartica,Apocynaceae,Climber,Flowering,Allamanda,cathartica,Full Sun,Medium,Easy,Yes,No,Large yellow trumpet flowers.
+allamanda_blanchetii,Purple Allamanda,Allamanda blanchetii,Apocynaceae,Climber,Flowering,Allamanda,blanchetii,Full Sun,Medium,Easy,Yes,No,Purple trumpet flowers.
+thevetia_peruviana,Yellow Oleander,Cascabela thevetia,Apocynaceae,Flowering Plant,Tree,Cascabela,thevetia,Full Sun,Low,Easy,Yes,No,Golden bell-shaped flowers.
+nerium_oleander_pink,Pink Oleander,Nerium oleander,Apocynaceae,Flowering Plant,Shrub,Nerium,oleander,Full Sun,Low,Easy,Yes,No,Popular flowering shrub.
+nerium_oleander_white,White Oleander,Nerium oleander,Apocynaceae,Flowering Plant,Shrub,Nerium,oleander,Full Sun,Low,Easy,Yes,No,White flowering cultivar.
+nerium_oleander_red,Red Oleander,Nerium oleander,Apocynaceae,Flowering Plant,Shrub,Nerium,oleander,Full Sun,Low,Easy,Yes,No,Red flowering cultivar.
+tabernaemontana_divaricata,Crape Jasmine,Tabernaemontana divaricata,Apocynaceae,Flowering Plant,Shrub,Tabernaemontana,divaricata,Full Sun,Medium,Easy,Yes,No,Pinwheel white flowers.
+tabernaemontana_dwarf,Dwarf Crape Jasmine,Tabernaemontana divaricata,Apocynaceae,Flowering Plant,Dwarf,Tabernaemontana,divaricata,Full Sun,Medium,Easy,Yes,No,Compact flowering shrub.
+brunfelsia_pauciflora,Yesterday Today Tomorrow,Brunfelsia pauciflora,Solanaceae,Flowering Plant,Shrub,Brunfelsia,pauciflora,Partial Sun,Medium,Medium,Yes,No,Flowers change color over days.
+tecoma_stans,Yellow Bells,Tecoma stans,Bignoniaceae,Flowering Plant,Tree,Tecoma,stans,Full Sun,Medium,Easy,Yes,No,Golden trumpet flowers.
+tecoma_capensis,Cape Honeysuckle,Tecomaria capensis,Bignoniaceae,Flowering Plant,Shrub,Tecomaria,capensis,Full Sun,Medium,Easy,Yes,No,Orange tubular flowers.
+podranea_ricasoliana,Pink Trumpet Vine,Podranea ricasoliana,Bignoniaceae,Climber,Flowering,Podranea,ricasoliana,Full Sun,Medium,Easy,Yes,No,Large pink trumpet flowers.
+mansoa_alliacea,Garlic Vine,Mansoa alliacea,Bignoniaceae,Climber,Flowering,Mansoa,alliacea,Full Sun,Medium,Easy,Yes,No,Leaves smell like garlic.
+pyrostegia_venusta,Flame Vine,Pyrostegia venusta,Bignoniaceae,Climber,Flowering,Pyrostegia,venusta,Full Sun,Medium,Easy,Yes,No,Orange winter flowers.
+pandorea_jasminoides,Bower Vine,Pandorea jasminoides,Bignoniaceae,Climber,Flowering,Pandorea,jasminoides,Full Sun,Medium,Easy,Yes,No,Pink trumpet flowers.
+thunbergia_grandiflora,Blue Sky Vine,Thunbergia grandiflora,Acanthaceae,Climber,Flowering,Thunbergia,grandiflora,Full Sun,Medium,Easy,Yes,No,Large blue flowers.
+thunbergia_erecta,King Mantle,Thunbergia erecta,Acanthaceae,Shrub,Flowering,Thunbergia,erecta,Full Sun,Medium,Easy,Yes,No,Blue-purple flowers.
+thunbergia_alata,Black Eyed Susan Vine,Thunbergia alata,Acanthaceae,Climber,Flowering,Thunbergia,alata,Full Sun,Medium,Easy,Yes,No,Orange flowers with black eye.
+mandevilla_sanderi,Mandevilla,Mandevilla sanderi,Apocynaceae,Climber,Flowering,Mandevilla,sanderi,Full Sun,Medium,Easy,Yes,No,Large pink flowers.
+dipladenia_sundaville,Dipladenia,Mandevilla sanderi,Apocynaceae,Flowering Plant,Compact,Mandevilla,sanderi,Full Sun,Medium,Easy,Yes,No,Compact mandevilla hybrid.
+quisqualis_indica,Rangoon Creeper,Combretum indicum,Combretaceae,Climber,Flowering,Combretum,indicum,Full Sun,Medium,Easy,Yes,No,Fragrant flowers changing white to red.
+petrea_volubilis,Queens Wreath,Petrea volubilis,Verbenaceae,Climber,Flowering,Petrea,volubilis,Full Sun,Medium,Medium,Yes,No,Purple cascading flowers.
+clerodendrum_splendens,Flaming Glorybower,Clerodendrum splendens,Lamiaceae,Climber,Flowering,Clerodendrum,splendens,Full Sun,Medium,Easy,Yes,No,Scarlet flower clusters.
+clerodendrum_quadriloculare,Starburst Plant,Clerodendrum quadriloculare,Lamiaceae,Shrub,Flowering,Clerodendrum,quadriloculare,Full Sun,Medium,Medium,Yes,No,Pink starburst flowers.
+holmskioldia_sanguinea,Chinese Hat Plant,Holmskioldia sanguinea,Lamiaceae,Shrub,Flowering,Holmskioldia,sanguinea,Full Sun,Medium,Easy,Yes,No,Orange hat-shaped flowers.
+strophanthus_gratus,Spider Tresses,Strophanthus gratus,Apocynaceae,Flowering Plant,Shrub,Strophanthus,gratus,Full Sun,Medium,Medium,Yes,No,Fragrant white flowers.
+wrightia_religiosa,Water Jasmine,Wrightia religiosa,Apocynaceae,Shrub,Bonsai,Wrightia,religiosa,Full Sun,Medium,Medium,Yes,No,Excellent bonsai species.
+wrightia_antidysenterica,Snowflake,Wrightia antidysenterica,Apocynaceae,Flowering Plant,Shrub,Wrightia,antidysenterica,Full Sun,Medium,Easy,Yes,No,White pinwheel flowers.
+millingtonia_hortensis,Indian Cork Tree,Millingtonia hortensis,Bignoniaceae,Tree,Flowering,Millingtonia,hortensis,Full Sun,Medium,Medium,Yes,No,Highly fragrant night flowers.
+spathodea_campanulata,African Tulip Tree,Spathodea campanulata,Bignoniaceae,Tree,Flowering,Spathodea,campanulata,Full Sun,Medium,Easy,Yes,No,Large orange flowers.
+jacaranda_mimosifolia,Blue Jacaranda,Jacaranda mimosifolia,Bignoniaceae,Tree,Flowering,Jacaranda,mimosifolia,Full Sun,Medium,Medium,Yes,No,Spectacular lavender blooms.
+delonix_regia,Gulmohar,Delonix regia,Fabaceae,Tree,Flowering,Delonix,regia,Full Sun,Medium,Easy,Yes,No,Brilliant scarlet summer flowers.
+cassia_fistula,Golden Shower Tree,Cassia fistula,Fabaceae,Tree,Flowering,Cassia,fistula,Full Sun,Medium,Easy,Yes,No,National flower tree with golden blooms.
+hibiscus_red,Hibiscus Red,Hibiscus rosa-sinensis,Malvaceae,Flowering Plant,Hibiscus,Hibiscus,rosa-sinensis,Full Sun,Medium,Easy,Yes,No,Large red flowers.
+hibiscus_white,Hibiscus White,Hibiscus rosa-sinensis,Malvaceae,Flowering Plant,Hibiscus,Hibiscus,rosa-sinensis,Full Sun,Medium,Easy,Yes,No,Pure white blooms.
+hibiscus_pink,Hibiscus Pink,Hibiscus rosa-sinensis,Malvaceae,Flowering Plant,Hibiscus,Hibiscus,rosa-sinensis,Full Sun,Medium,Easy,Yes,No,Soft pink flowers.
+hibiscus_yellow,Hibiscus Yellow,Hibiscus rosa-sinensis,Malvaceae,Flowering Plant,Hibiscus,Hibiscus,rosa-sinensis,Full Sun,Medium,Easy,Yes,No,Golden yellow flowers.
+hibiscus_orange,Hibiscus Orange,Hibiscus rosa-sinensis,Malvaceae,Flowering Plant,Hibiscus,Hibiscus,rosa-sinensis,Full Sun,Medium,Easy,Yes,No,Bright orange blooms.
+hibiscus_peach,Hibiscus Peach,Hibiscus rosa-sinensis,Malvaceae,Flowering Plant,Hibiscus,Hibiscus,rosa-sinensis,Full Sun,Medium,Easy,Yes,No,Peach colored flowers.
+hibiscus_double_red,Double Red Hibiscus,Hibiscus rosa-sinensis,Malvaceae,Flowering Plant,Double,Hibiscus,rosa-sinensis,Full Sun,Medium,Easy,Yes,No,Double petal red blooms.
+hibiscus_double_pink,Double Pink Hibiscus,Hibiscus rosa-sinensis,Malvaceae,Flowering Plant,Double,Hibiscus,rosa-sinensis,Full Sun,Medium,Easy,Yes,No,Double pink flowers.
+hibiscus_variegated,Variegated Hibiscus,Hibiscus rosa-sinensis,Malvaceae,Flowering Plant,Variegated,Hibiscus,rosa-sinensis,Full Sun,Medium,Easy,Yes,No,Cream variegated foliage.
+hibiscus_cooperi,Cooperi Hibiscus,Hibiscus rosa-sinensis,Malvaceae,Flowering Plant,Variegated,Hibiscus,rosa-sinensis,Full Sun,Medium,Medium,Yes,No,Colorful foliage variety.
+
+bougainvillea_pink,Pink Bougainvillea,Bougainvillea glabra,Nyctaginaceae,Climber,Flowering,Bougainvillea,glabra,Full Sun,Low,Easy,Yes,No,Classic pink bracts.
+bougainvillea_white,White Bougainvillea,Bougainvillea glabra,Nyctaginaceae,Climber,Flowering,Bougainvillea,glabra,Full Sun,Low,Easy,Yes,No,White flowering form.
+bougainvillea_red,Red Bougainvillea,Bougainvillea spectabilis,Nyctaginaceae,Climber,Flowering,Bougainvillea,spectabilis,Full Sun,Low,Easy,Yes,No,Deep red bracts.
+bougainvillea_orange,Orange Bougainvillea,Bougainvillea spectabilis,Nyctaginaceae,Climber,Flowering,Bougainvillea,spectabilis,Full Sun,Low,Easy,Yes,No,Orange flowering variety.
+bougainvillea_yellow,Yellow Bougainvillea,Bougainvillea glabra,Nyctaginaceae,Climber,Flowering,Bougainvillea,glabra,Full Sun,Low,Easy,Yes,No,Rare yellow cultivar.
+bougainvillea_magenta,Magenta Bougainvillea,Bougainvillea glabra,Nyctaginaceae,Climber,Flowering,Bougainvillea,glabra,Full Sun,Low,Easy,Yes,No,Vivid magenta flowers.
+bougainvillea_purple,Purple Bougainvillea,Bougainvillea glabra,Nyctaginaceae,Climber,Flowering,Bougainvillea,glabra,Full Sun,Low,Easy,Yes,No,Rich purple bracts.
+bougainvillea_dwarf,Dwarf Bougainvillea,Bougainvillea glabra,Nyctaginaceae,Shrub,Dwarf,Bougainvillea,glabra,Full Sun,Low,Easy,Yes,No,Compact landscape variety.
+bougainvillea_variegata,Variegated Bougainvillea,Bougainvillea glabra,Nyctaginaceae,Climber,Variegated,Bougainvillea,glabra,Full Sun,Low,Medium,Yes,No,Variegated foliage.
+bougainvillea_bonsai,Bougainvillea Bonsai,Bougainvillea glabra,Nyctaginaceae,Bonsai,Bonsai,Bougainvillea,glabra,Full Sun,Low,Medium,Yes,No,Excellent bonsai specimen.
+
+ixora_red,Red Ixora,Ixora coccinea,Rubiaceae,Flowering Plant,Shrub,Ixora,coccinea,Full Sun,Medium,Easy,Yes,No,Large red flower clusters.
+ixora_yellow,Yellow Ixora,Ixora coccinea,Rubiaceae,Flowering Plant,Shrub,Ixora,coccinea,Full Sun,Medium,Easy,Yes,No,Yellow flowering cultivar.
+ixora_white,White Ixora,Ixora coccinea,Rubiaceae,Flowering Plant,Shrub,Ixora,coccinea,Full Sun,Medium,Easy,Yes,No,White flower clusters.
+ixora_pink,Pink Ixora,Ixora coccinea,Rubiaceae,Flowering Plant,Shrub,Ixora,coccinea,Full Sun,Medium,Easy,Yes,No,Pink flowering cultivar.
+ixora_dwarf,Dwarf Ixora,Ixora chinensis,Rubiaceae,Flowering Plant,Dwarf,Ixora,chinensis,Full Sun,Medium,Easy,Yes,No,Compact hedge variety.
+
+lantana_camara,Lantana,Lantana camara,Verbenaceae,Flowering Plant,Shrub,Lantana,camara,Full Sun,Low,Easy,Yes,No,Butterfly attracting flowers.
+lantana_yellow,Yellow Lantana,Lantana camara,Verbenaceae,Flowering Plant,Shrub,Lantana,camara,Full Sun,Low,Easy,Yes,No,Yellow flowering form.
+lantana_purple,Purple Lantana,Lantana montevidensis,Verbenaceae,Ground Cover,Flowering,Lantana,montevidensis,Full Sun,Low,Easy,Yes,No,Trailing purple lantana.
+lantana_white,White Lantana,Lantana camara,Verbenaceae,Flowering Plant,Shrub,Lantana,camara,Full Sun,Low,Easy,Yes,No,White flower clusters.
+
+pentas_red,Red Pentas,Pentas lanceolata,Rubiaceae,Flowering Plant,Shrub,Pentas,lanceolata,Full Sun,Medium,Easy,Yes,No,Butterfly friendly flowers.
+pentas_pink,Pink Pentas,Pentas lanceolata,Rubiaceae,Flowering Plant,Shrub,Pentas,lanceolata,Full Sun,Medium,Easy,Yes,No,Long flowering season.
+pentas_white,White Pentas,Pentas lanceolata,Rubiaceae,Flowering Plant,Shrub,Pentas,lanceolata,Full Sun,Medium,Easy,Yes,No,White flower clusters.
+pentas_purple,Purple Pentas,Pentas lanceolata,Rubiaceae,Flowering Plant,Shrub,Pentas,lanceolata,Full Sun,Medium,Easy,Yes,No,Purple flowering cultivar.
+
+poinsettia_red,Poinsettia,Euphorbia pulcherrima,Euphorbiaceae,Flowering Plant,Ornamental,Euphorbia,pulcherrima,Bright Light,Medium,Medium,Yes,No,Famous Christmas plant.
+poinsettia_white,White Poinsettia,Euphorbia pulcherrima,Euphorbiaceae,Flowering Plant,Ornamental,Euphorbia,pulcherrima,Bright Light,Medium,Medium,Yes,No,White bracts.
+poinsettia_pink,Pink Poinsettia,Euphorbia pulcherrima,Euphorbiaceae,Flowering Plant,Ornamental,Euphorbia,pulcherrima,Bright Light,Medium,Medium,Yes,No,Pink bracts.
+russelia_equisetiformis,Firecracker Plant,Russelia equisetiformis,Plantaginaceae,Flowering Plant,Cascading,Russelia,equisetiformis,Full Sun,Medium,Easy,Yes,No,Arching stems with red flowers.
+hamelia_patens,Firebush,Hamelia patens,Rubiaceae,Flowering Plant,Shrub,Hamelia,patens,Full Sun,Medium,Easy,Yes,No,Hummingbird attracting shrub.
+duranta_variegata,Variegated Duranta,Duranta erecta,Verbenaceae,Shrub,Variegated,Duranta,erecta,Full Sun,Medium,Easy,Yes,No,Variegated hedge shrub.
+abelia_grandiflora,Glossy Abelia,Abelia × grandiflora,Caprifoliaceae,Flowering Plant,Shrub,Abelia,grandiflora,Full Sun,Medium,Easy,Yes,No,Fragrant white flowers.
+rosa_peace,Peace Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Hybrid Tea,Rosa,hybrida,Full Sun,Medium,Medium,Yes,No,World famous yellow-pink hybrid tea rose.
+rosa_double_delight,Double Delight Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Hybrid Tea,Rosa,hybrida,Full Sun,Medium,Medium,Yes,No,Cream petals with red edges and strong fragrance.
+rosa_mister_lincoln,Mister Lincoln Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Hybrid Tea,Rosa,hybrida,Full Sun,Medium,Medium,Yes,No,Deep red fragrant hybrid tea.
+rosa_queen_elizabeth,Queen Elizabeth Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Grandiflora,Rosa,hybrida,Full Sun,Medium,Medium,Yes,No,Tall pink grandiflora.
+rosa_chrysler_imperial,Chrysler Imperial Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Hybrid Tea,Rosa,hybrida,Full Sun,Medium,Medium,Yes,No,Dark crimson fragrant flowers.
+rosa_papa_meilland,Papa Meilland Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Hybrid Tea,Rosa,hybrida,Full Sun,Medium,Medium,Yes,No,Velvety dark red blooms.
+rosa_black_baccara,Black Baccara Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Hybrid Tea,Rosa,hybrida,Full Sun,Medium,Medium,Yes,No,Almost black velvet petals.
+rosa_blue_moon,Blue Moon Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Hybrid Tea,Rosa,hybrida,Full Sun,Medium,Medium,Yes,No,Lavender fragrant flowers.
+rosa_pierre_de_ronsard,Eden Rose,Rosa × hybrida,Rosaceae,Climber,Climbing Rose,Rosa,hybrida,Full Sun,Medium,Medium,Yes,No,Classic climbing rose.
+rosa_iceberg,Iceberg Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Floribunda,Rosa,hybrida,Full Sun,Medium,Easy,Yes,No,Continuous white flowering.
+
+rosa_gold_medal,Gold Medal Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Hybrid Tea,Rosa,hybrida,Full Sun,Medium,Medium,Yes,No,Golden yellow flowers.
+rosa_tropicana,Tropicana Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Hybrid Tea,Rosa,hybrida,Full Sun,Medium,Medium,Yes,No,Orange fragrant blooms.
+rosa_pink_perfection,Pink Perfection Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Hybrid Tea,Rosa,hybrida,Full Sun,Medium,Medium,Yes,No,Large pink flowers.
+rosa_white_swan,White Swan Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Hybrid Tea,Rosa,hybrida,Full Sun,Medium,Medium,Yes,No,Pure white blooms.
+rosa_red_velvet,Red Velvet Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Hybrid Tea,Rosa,hybrida,Full Sun,Medium,Medium,Yes,No,Velvety deep red flowers.
+rosa_orange_glow,Orange Glow Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Floribunda,Rosa,hybrida,Full Sun,Medium,Easy,Yes,No,Orange flower clusters.
+rosa_sunflare,Sunflare Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Floribunda,Rosa,hybrida,Full Sun,Medium,Easy,Yes,No,Bright yellow flowers.
+rosa_angel_face,Angel Face Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Floribunda,Rosa,hybrida,Full Sun,Medium,Medium,Yes,No,Lavender fragrant blooms.
+rosa_europeana,Europeana Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Floribunda,Rosa,hybrida,Full Sun,Medium,Easy,Yes,No,Dark red flower clusters.
+rosa_playboy,Playboy Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Floribunda,Rosa,hybrida,Full Sun,Medium,Easy,Yes,No,Orange scarlet flowers.
+
+rosa_knock_out,Knock Out Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Shrub Rose,Rosa,hybrida,Full Sun,Medium,Easy,Yes,No,Disease resistant landscape rose.
+rosa_double_knock_out,Double Knock Out Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Shrub Rose,Rosa,hybrida,Full Sun,Medium,Easy,Yes,No,Double red flowers.
+rosa_pink_knock_out,Pink Knock Out Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Shrub Rose,Rosa,hybrida,Full Sun,Medium,Easy,Yes,No,Soft pink landscape rose.
+rosa_rainbow_knock_out,Rainbow Knock Out Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Shrub Rose,Rosa,hybrida,Full Sun,Medium,Easy,Yes,No,Coral pink blooms.
+rosa_carpet_red,Red Carpet Rose,Rosa × hybrida,Rosaceae,Ground Cover,Rose,Rosa,hybrida,Full Sun,Medium,Easy,Yes,No,Ground cover rose.
+rosa_carpet_white,White Carpet Rose,Rosa × hybrida,Rosaceae,Ground Cover,Rose,Rosa,hybrida,Full Sun,Medium,Easy,Yes,No,White ground cover flowers.
+rosa_carpet_pink,Pink Carpet Rose,Rosa × hybrida,Rosaceae,Ground Cover,Rose,Rosa,hybrida,Full Sun,Medium,Easy,Yes,No,Pink spreading rose.
+rosa_mini_red,Miniature Red Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Miniature,Rosa,hybrida,Full Sun,Medium,Easy,Yes,No,Compact red rose.
+rosa_mini_pink,Miniature Pink Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Miniature,Rosa,hybrida,Full Sun,Medium,Easy,Yes,No,Mini pink blooms.
+rosa_mini_yellow,Miniature Yellow Rose,Rosa × hybrida,Rosaceae,Flowering Plant,Miniature,Rosa,hybrida,Full Sun,Medium,Easy,Yes,No,Mini yellow flowers.
+
+rosa_desi_red,Desi Red Rose,Rosa indica,Rosaceae,Flowering Plant,Indian Rose,Rosa,indica,Full Sun,Medium,Easy,Yes,No,Traditional Indian red rose.
+rosa_desi_pink,Desi Pink Rose,Rosa indica,Rosaceae,Flowering Plant,Indian Rose,Rosa,indica,Full Sun,Medium,Easy,Yes,No,Traditional pink desi rose.
+rosa_desi_white,Desi White Rose,Rosa indica,Rosaceae,Flowering Plant,Indian Rose,Rosa,indica,Full Sun,Medium,Easy,Yes,No,Traditional white rose.
+rosa_damascena,Damask Rose,Rosa damascena,Rosaceae,Flowering Plant,Fragrant,Rosa,damascena,Full Sun,Medium,Medium,Yes,No,Famous perfume rose.
+rosa_centifolia,Cabbage Rose,Rosa × centifolia,Rosaceae,Flowering Plant,Old Garden,Rosa,centifolia,Full Sun,Medium,Medium,Yes,No,Hundred petaled rose.
+rosa_gallica,Gallica Rose,Rosa gallica,Rosaceae,Flowering Plant,Old Garden,Rosa,gallica,Full Sun,Medium,Medium,Yes,No,Historic European rose.
+rosa_multiflora,Multiflora Rose,Rosa multiflora,Rosaceae,Climber,Wild Rose,Rosa,multiflora,Full Sun,Medium,Easy,Yes,No,Small white flower clusters.
+rosa_canina,Dog Rose,Rosa canina,Rosaceae,Shrub,Wild Rose,Rosa,canina,Full Sun,Medium,Easy,Yes,Yes,Produces edible rose hips.
+rosa_rugosa,Rugosa Rose,Rosa rugosa,Rosaceae,Shrub,Wild Rose,Rosa,rugosa,Full Sun,Medium,Easy,Yes,Yes,Highly fragrant with edible hips.
+rosa_banksiae,Lady Banks Rose,Rosa banksiae,Rosaceae,Climber,Thornless,Rosa,banksiae,Full Sun,Medium,Easy,Yes,No,Nearly thornless climbing rose.
+

@@ -1,8 +1,10 @@
+// lib/screens/auth/email_login_screen.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:plantmitra_1/screens/home/home_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:plantmitra_1/utils/logger.dart';
 
 class EmailLoginScreen extends StatefulWidget {
   const EmailLoginScreen({super.key});
@@ -43,7 +45,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     } catch (e) {
-      print('Error saving user data: $e');
+      Logger.error('Error saving user data: $e');
     }
   }
 
@@ -219,7 +221,9 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
 
               try {
                 await _auth.sendPasswordResetEmail(email: email);
-                Navigator.pop(context);
+                if (mounted) {
+                  Navigator.pop(context);
+                }
                 Fluttertoast.showToast(
                   msg: 'Password reset email sent! Check your inbox.',
                   backgroundColor: Colors.green,
@@ -253,7 +257,11 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (mounted) {
+              Navigator.pop(context);
+            }
+          },
         ),
       ),
       body: SingleChildScrollView(
@@ -279,7 +287,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
 
             // Title
             Text(
-              _isLoginMode ? 'Welcome Back!' : 'Join PlantMitra',
+              _isLoginMode ? 'Welcome Back!' : 'Join Jarvis Green!',
               style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,

@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:plantmitra_1/screens/auth/login_screen.dart';
-import 'package:plantmitra_1/screens/home/home_screen.dart';
+import 'package:plantmitra_1/utils/logger.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -11,46 +10,45 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  /// Splash screen duration
+  static const Duration splashDuration = Duration(milliseconds: 1800);
+
   @override
   void initState() {
     super.initState();
-    print('🚀 SplashScreen: initState called');
+    Logger.debug('🚀 SplashScreen started');
     _checkAuthStatus();
   }
 
   Future<void> _checkAuthStatus() async {
-    print('🔍 SplashScreen: Checking auth status...');
-    
-    // Show splash for at least 2 seconds
-    await Future.delayed(const Duration(seconds: 2));
-    
+    Logger.debug('Checking login status...');
+
+    // Show splash for a short time
+    await Future.delayed(splashDuration);
+
     final user = FirebaseAuth.instance.currentUser;
-    print('👤 Current user: ${user?.uid ?? "null"}');
-    print('👤 User display name: ${user?.displayName ?? "null"}');
-    print('👤 User email: ${user?.email ?? "null"}');
-    
-    if (mounted) {
-      if (user != null) {
-        // User is logged in, go to Home
-        print('✅ User is logged in, navigating to HomeScreen');
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
-      } else {
-        // User is not logged in, go to Login
-        print('❌ User is NOT logged in, navigating to LoginScreen');
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-        );
-      }
+
+    Logger.debug('User UID : ${user?.uid}');
+    Logger.debug('User Name: ${user?.displayName}');
+    Logger.debug('User Email: ${user?.email}');
+
+    if (!mounted) return;
+
+    if (user != null) {
+      Logger.info('User already logged in');
+
+      Navigator.pushReplacementNamed(context, '/home');
+    } else {
+      Logger.info('No logged in user');
+
+      Navigator.pushReplacementNamed(context, '/login');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    print('🎨 SplashScreen: Building...');
+    Logger.debug('Building SplashScreen');
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -69,43 +67,51 @@ class _SplashScreenState extends State<SplashScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 120,
-                height: 120,
+                width: 150,
+                height: 150,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(22),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.15),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.local_florist,
-                  size: 70,
-                  color: Colors.green,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Image.asset(
+                    "assets/logo/jarvis_green_logo_transparent.png",
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
+
               const SizedBox(height: 30),
+
               const Text(
-                'PlantMitra',
+                "Jarvis Green",
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 10),
+
+              const SizedBox(height: 8),
+
               const Text(
-                'Your Plant Companion',
+                "Your Plant Companion",
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.white70,
                 ),
               ),
+
               const SizedBox(height: 50),
+
               const CircularProgressIndicator(
                 color: Colors.white,
               ),

@@ -1,6 +1,8 @@
+// lib/screens/home/all_plants_screen.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:plantmitra_1/services/plant_master_service.dart';
+import 'package:plantmitra_1/utils/logger.dart';
 import '../detail/plant_detail_screen.dart';
 
 class AllPlantsScreen extends StatefulWidget {
@@ -325,6 +327,7 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
                 }
 
                 if (snapshot.hasError) {
+                  Logger.error("Error loading plants: ${snapshot.error}");
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,

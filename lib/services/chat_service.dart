@@ -1,5 +1,7 @@
+// lib/services/chat_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:plantmitra_1/utils/logger.dart';
 
 class ChatService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -36,7 +38,7 @@ class ChatService {
       }
       return null;
     } catch (e) {
-      print('Error getting user info: $e');
+      Logger.error('Error getting user info: $e');
       return null;
     }
   }
@@ -77,12 +79,12 @@ class ChatService {
       _userNameCache[userId] = name;
       return name;
     } catch (e) {
-      print('Error getting user name: $e');
+      Logger.error('Error getting user name: $e');
       return userId.length > 8 ? userId.substring(0, 8) : userId;
     }
   }
 
-  // 📨 Send text message - FIXED to ensure names are saved
+  // 📨 Send text message
   Future<void> sendMessage({
     required String senderId,
     required String receiverId,
@@ -108,8 +110,8 @@ class ChatService {
       final senderName = await getUserDisplayName(senderId);
       final receiverName = await getUserDisplayName(receiverId);
 
-      print('📝 Sender Name: $senderName');
-      print('📝 Receiver Name: $receiverName');
+      Logger.debug('📝 Sender Name: $senderName');
+      Logger.debug('📝 Receiver Name: $receiverName');
 
       // Update chat document with participant names
       await chatRef.set({
@@ -124,14 +126,14 @@ class ChatService {
         'lastMessageType': 'text',
       }, SetOptions(merge: true));
       
-      print('✅ Chat document updated with names');
+      Logger.debug('✅ Chat document updated with names');
     } catch (e) {
-      print('Error sending message: $e');
+      Logger.error('Error sending message: $e');
       rethrow;
     }
   }
 
-  // 🖼️ Send image message - FIXED
+  // 🖼️ Send image message
   Future<void> sendImage({
     required String senderId,
     required String receiverId,
@@ -165,7 +167,7 @@ class ChatService {
         'lastMessageType': 'image',
       }, SetOptions(merge: true));
     } catch (e) {
-      print('Error sending image: $e');
+      Logger.error('Error sending image: $e');
       rethrow;
     }
   }
@@ -195,7 +197,7 @@ class ChatService {
             }).toList();
           });
     } catch (e) {
-      print('Error getting messages stream: $e');
+      Logger.error('Error getting messages stream: $e');
       return Stream.value([]);
     }
   }
@@ -224,7 +226,7 @@ class ChatService {
         };
       }).toList();
     } catch (e) {
-      print('Error getting messages: $e');
+      Logger.error('Error getting messages: $e');
       return [];
     }
   }
@@ -247,7 +249,7 @@ class ChatService {
             }).toList();
           });
     } catch (e) {
-      print('Error getting chat rooms: $e');
+      Logger.error('Error getting chat rooms: $e');
       return Stream.error(e);
     }
   }
@@ -269,7 +271,7 @@ class ChatService {
             }).toList();
           });
     } catch (e) {
-      print('Error getting chat rooms without order: $e');
+      Logger.error('Error getting chat rooms without order: $e');
       return Stream.error(e);
     }
   }
@@ -297,7 +299,28 @@ class ChatService {
       }
       await batch.commit();
     } catch (e) {
-      print('Error marking messages as read: $e');
+      Logger.warning('Error marking messages as read: $e');
+      // If index is missing, try without the read filter
+      try {
+        final messagesRef = _firestore
+            .collection('chats')
+            .doc(chatId)
+            .collection('messages')
+            .where('sender', isNotEqualTo: userId);
+
+        final snapshot = await messagesRef.get();
+        
+        final batch = _firestore.batch();
+        for (var doc in snapshot.docs) {
+          final data = doc.data();
+          if (data['read'] == false) {
+            batch.update(doc.reference, {'read': true});
+          }
+        }
+        await batch.commit();
+      } catch (e2) {
+        Logger.error('Error in fallback mark messages as read: $e2');
+      }
     }
   }
 
@@ -315,7 +338,7 @@ class ChatService {
         }
       }, SetOptions(merge: true));
     } catch (e) {
-      print('Error setting typing status: $e');
+      Logger.error('Error setting typing status: $e');
     }
   }
 
@@ -334,7 +357,7 @@ class ChatService {
             return data['typing'] ?? {};
           });
     } catch (e) {
-      print('Error getting typing status: $e');
+      Logger.error('Error getting typing status: $e');
       return Stream.value({});
     }
   }
@@ -358,12 +381,28 @@ class ChatService {
               .get();
           totalUnread += snapshot.count ?? 0;
         } catch (e) {
-          print('Error counting unread for chat ${chat.id}: $e');
+          Logger.warning('Error counting unread for chat ${chat.id}: $e');
+          // Fallback: count manually
+          try {
+            final allMessages = await chat.reference
+                .collection('messages')
+                .where('sender', isNotEqualTo: userId)
+                .get();
+            int unread = 0;
+            for (var doc in allMessages.docs) {
+              if (doc.data()['read'] == false) {
+                unread++;
+              }
+            }
+            totalUnread += unread;
+          } catch (e2) {
+            Logger.error('Error in fallback unread count: $e2');
+          }
         }
       }
       return totalUnread;
     } catch (e) {
-      print('Error getting unread count: $e');
+      Logger.error('Error getting unread count: $e');
       return 0;
     }
   }
@@ -386,7 +425,7 @@ class ChatService {
         await messageRef.delete();
       }
     } catch (e) {
-      print('Error deleting message: $e');
+      Logger.error('Error deleting message: $e');
       rethrow;
     }
   }
@@ -401,6 +440,7 @@ class ChatService {
       final chatDoc = await chatRef.get();
       
       if (chatDoc.exists && (chatDoc.data()?['participants'] as List).contains(userId)) {
+        // Delete all messages
         final messages = await chatRef.collection('messages').get();
         final batch = _firestore.batch();
         for (var doc in messages.docs) {
@@ -410,7 +450,7 @@ class ChatService {
         await batch.commit();
       }
     } catch (e) {
-      print('Error deleting chat: $e');
+      Logger.error('Error deleting chat: $e');
       rethrow;
     }
   }
@@ -427,7 +467,7 @@ class ChatService {
       }
       return null;
     } catch (e) {
-      print('Error getting chat info: $e');
+      Logger.error('Error getting chat info: $e');
       return null;
     }
   }
@@ -438,33 +478,8 @@ class ChatService {
       final doc = await _firestore.collection('chats').doc(chatId).get();
       return doc.exists;
     } catch (e) {
-      print('Error checking chat exists: $e');
+      Logger.error('Error checking chat exists: $e');
       return false;
-    }
-  }
-
-  // 🛠️ Helper method to update participant names in existing chats
-  Future<void> updateParticipantNames(String chatId) async {
-    try {
-      final chatDoc = await _firestore.collection('chats').doc(chatId).get();
-      if (!chatDoc.exists) return;
-      
-      final data = chatDoc.data() as Map<String, dynamic>;
-      final participants = data['participants'] as List;
-      
-      Map<String, String> names = {};
-      for (var userId in participants) {
-        final name = await getUserDisplayName(userId);
-        names[userId] = name;
-      }
-      
-      await _firestore.collection('chats').doc(chatId).update({
-        'participantsNames': names,
-      });
-      
-      print('✅ Updated participant names for chat: $chatId');
-    } catch (e) {
-      print('Error updating participant names: $e');
     }
   }
 }

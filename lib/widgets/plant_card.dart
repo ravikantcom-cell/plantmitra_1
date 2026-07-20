@@ -1,5 +1,10 @@
+// lib/widgets/plant_card.dart
+
 import 'package:flutter/material.dart';
-import '../services/favorite_service.dart';
+import 'package:plantmitra_1/services/favorite_service.dart';
+import 'package:plantmitra_1/theme/app_colors.dart';
+import 'package:plantmitra_1/theme/app_text_styles.dart';
+import 'package:plantmitra_1/utils/logger.dart';
 
 class PlantCard extends StatelessWidget {
   final String plantId;
@@ -15,22 +20,41 @@ class PlantCard extends StatelessWidget {
 
   final FavoriteService favoriteService = FavoriteService();
 
+  Widget _placeholderImage() {
+    return Container(
+      width: 90,
+      height: 90,
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Icon(
+        Icons.eco,
+        color: AppColors.primary,
+        size: 40,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final String name = plant["name"] ?? "Unknown Plant";
     final String location = plant["location"] ?? "";
     final String imageUrl = plant["imageUrl"] ?? "";
     final bool isFree = plant["isFree"] ?? true;
-    final int price = (plant["price"] ?? 0) as int;
+
+    final int price = plant["price"] is int
+        ? plant["price"]
+        : int.tryParse("${plant["price"]}") ?? 0;
 
     return Card(
+      elevation: 3,
       margin: const EdgeInsets.only(bottom: 15),
-      elevation: 4,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -44,27 +68,9 @@ class PlantCard extends StatelessWidget {
                         width: 90,
                         height: 90,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          width: 90,
-                          height: 90,
-                          color: Colors.green.shade100,
-                          child: const Icon(
-                            Icons.eco,
-                            color: Colors.green,
-                            size: 40,
-                          ),
-                        ),
+                        errorBuilder: (_, __, ___) => _placeholderImage(),
                       )
-                    : Container(
-                        width: 90,
-                        height: 90,
-                        color: Colors.green.shade100,
-                        child: const Icon(
-                          Icons.eco,
-                          color: Colors.green,
-                          size: 40,
-                        ),
-                      ),
+                    : _placeholderImage(),
               ),
 
               const SizedBox(width: 15),
@@ -75,32 +81,37 @@ class PlantCard extends StatelessWidget {
                   children: [
                     Text(
                       name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
+                      style: AppTextStyles.subHeading,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
 
-                    Text(location),
+                    Text(
+                      location,
+                      style: AppTextStyles.caption,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
 
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
 
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
-                        vertical: 5,
+                        vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: isFree ? Colors.green : Colors.orange,
-                        borderRadius: BorderRadius.circular(10),
+                        color: isFree
+                            ? AppColors.success
+                            : AppColors.warning,
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         isFree ? "FREE" : "₹ $price",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                        style: AppTextStyles.button.copyWith(
+                          fontSize: 13,
                         ),
                       ),
                     ),
@@ -108,20 +119,52 @@ class PlantCard extends StatelessWidget {
                 ),
               ),
 
-              StreamBuilder<bool>(
-                stream: favoriteService.isFavorite(plantId),
+              FutureBuilder<bool>(
+                future: favoriteService.isFavorite(plantId),
                 builder: (context, snapshot) {
                   final isFavorite = snapshot.data ?? false;
+
+                  if (snapshot.connectionState ==
+                      ConnectionState.waiting) {
+                    return const SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                        ),
+                      ),
+                    );
+                  }
 
                   return IconButton(
                     icon: Icon(
                       isFavorite
                           ? Icons.favorite
                           : Icons.favorite_border,
-                      color: isFavorite ? Colors.red : Colors.grey,
+                      color: isFavorite
+                          ? Colors.red
+                          : AppColors.icon,
                     ),
                     onPressed: () async {
-                      await favoriteService.toggleFavorite(plantId);
+                      try {
+                        await favoriteService.toggleFavorite(
+                          plantId,
+                        );
+                      } catch (e) {
+                        Logger.error("Favorite Error : $e");
+
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: AppColors.error,
+                              content: Text(
+                                "Failed to update favorite",
+                              ),
+                            ),
+                          );
+                        }
+                      }
                     },
                   );
                 },

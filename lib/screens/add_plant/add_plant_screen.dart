@@ -1,13 +1,15 @@
+// lib/screens/add_plant/add_plant_screen.dart
 import 'dart:io';
-
+import 'package:plantmitra_1/services/storage_service.dart';
+import 'package:plantmitra_1/services/firestore_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:uuid/uuid.dart';
 import 'package:dropdown_search/dropdown_search.dart';
+import 'package:plantmitra_1/utils/logger.dart';
+
 
 class AddPlantScreen extends StatefulWidget {
   const AddPlantScreen({super.key});
@@ -17,8 +19,6 @@ class AddPlantScreen extends StatefulWidget {
 }
 
 class _AddPlantScreenState extends State<AddPlantScreen> {
-  final FirebaseFirestore firestore = FirebaseFirestore.instance;
-  final FirebaseStorage storage = FirebaseStorage.instance;
   final FirebaseAuth auth = FirebaseAuth.instance;
 
   final _formKey = GlobalKey<FormState>();
@@ -58,17 +58,15 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
     });
     
     try {
-      print("🔄 Loading plant_master from Firebase...");
+      Logger.debug("🔄 Loading plant_master from Firebase...");
       
       // Simple query - no orderBy or where to avoid index issues
-      final snapshot = await firestore
-          .collection("plant_master")
-          .get();
+      final snapshot = await FirestoreService.masterPlants.get();
 
-      print("📊 Total plant_master documents: ${snapshot.docs.length}");
+      Logger.debug("📊 Total plant_master documents: ${snapshot.docs.length}");
 
       if (snapshot.docs.isEmpty) {
-        print("⚠️ No documents found in plant_master collection!");
+        Logger.warning("⚠️ No documents found in plant_master collection!");
         setState(() {
           errorMessage = "No plants found in master list";
           isLoadingPlants = false;
@@ -78,7 +76,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
 
       masterPlants = snapshot.docs.map((e) {
         final data = e.data();
-        print("🌱 Plant: ${e.id} - ${data['name']}");
+        Logger.debug("🌱 Plant: ${e.id} - ${data['name']}");
         
         return {
           "id": e.id,
@@ -99,7 +97,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
           a["name"].toString().compareTo(b["name"].toString())
       );
 
-      print("✅ Loaded ${masterPlants.length} active plants successfully");
+      Logger.info("✅ Loaded ${masterPlants.length} active plants successfully");
       
       if (mounted) {
         setState(() {
@@ -107,7 +105,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         });
       }
     } catch (e) {
-      print("❌ Error loading plants: $e");
+      Logger.error("❌ Error loading plants: $e");
       setState(() {
         errorMessage = "Error loading plants. Please try again.";
         isLoadingPlants = false;
@@ -137,22 +135,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
     }
   }
 
-  Future<String> uploadImage() async {
-    if (selectedImage == null) return "";
-
-    try {
-      final String fileName = '${DateTime.now().millisecondsSinceEpoch}_${const Uuid().v4()}.jpg';
-      final Reference ref = storage.ref().child('plant_images/$fileName');
-      
-      final UploadTask uploadTask = ref.putFile(selectedImage!);
-      final TaskSnapshot snapshot = await uploadTask;
-      final String downloadUrl = await snapshot.ref.getDownloadURL();
-      return downloadUrl;
-    } catch (e) {
-      print("Upload error: $e");
-      return "";
-    }
-  }
+   
 
   Future<void> submitPlant() async {
     if (!_formKey.currentState!.validate()) {
@@ -178,7 +161,11 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
     try {
       setState(() => isUploading = true);
 
-      String imageUrl = await uploadImage();
+      String imageUrl = "";
+
+if (selectedImage != null) {
+  imageUrl = await StorageService.uploadPlantImage(selectedImage!);
+}
 
       final user = auth.currentUser;
       if (user == null) {
@@ -222,7 +209,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         "updatedAt": FieldValue.serverTimestamp(),
       };
 
-      await firestore.collection("plants").add(plantData);
+      await FirestoreService.addPlant(plantData);
 
       if (mounted) {
         Fluttertoast.showToast(
@@ -233,7 +220,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         Navigator.pop(context);
       }
     } catch (e) {
-      print("Submit Error: $e");
+      Logger.error("Submit Error: $e");
       if (mounted) {
         Fluttertoast.showToast(msg: "Failed to add plant: $e");
       }
@@ -315,7 +302,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
 
             // Item Type
             DropdownButtonFormField<String>(
-              value: selectedItemType,
+              initialValue: selectedItemType,
               decoration: InputDecoration(
                 labelText: "Item Type *",
                 prefixIcon: const Icon(Icons.category, color: Colors.green),
@@ -414,7 +401,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                             ),
                             child: DropdownSearch<Map<String, dynamic>>(
                               items: (filter, infiniteScrollProps) {
-                                if (filter == null || filter.isEmpty) {
+                                if (filter.isEmpty) {
                                   return masterPlants;
                                 }
                                 return masterPlants.where((plant) {
@@ -423,7 +410,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                                 }).toList();
                               },
                               itemAsString: (item) => item["name"].toString(),
-                              compareFn: (item1, item2) => item1?["id"] == item2?["id"],
+                              compareFn: (item1, item2) => item1["id"] == item2["id"],
                               selectedItem: selectedPlant,
                               popupProps: PopupProps.menu(
                                 showSearchBox: true,
@@ -461,7 +448,11 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                                 setState(() {
                                   selectedPlant = plant;
                                 });
-                                print("✅ Selected Plant: ${plant?["name"]} (${plant?["id"]})");
+                                if (plant != null) {
+                                  Logger.debug(
+                                    "✅ Selected Plant: ${plant["name"]} (${plant["id"]})",
+                                  );
+                                }
                               },
                               validator: (value) => value == null ? "Please select a plant" : null,
                             ),
@@ -553,7 +544,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Free Switch
+            // Free Switch - Fixed: activeColor -> activeThumbColor
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -579,7 +570,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                     color: isFree ? Colors.green.shade700 : Colors.orange.shade700,
                   ),
                 ),
-                activeColor: Colors.green,
+                activeThumbColor: Colors.green, // Fixed: activeColor -> activeThumbColor
                 onChanged: (value) {
                   setState(() {
                     isFree = value;

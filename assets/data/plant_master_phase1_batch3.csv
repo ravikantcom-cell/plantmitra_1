@@ -1,0 +1,31 @@
+id,name,scientificName,category,subCategory
+anthurium,Anthurium,Anthurium andraeanum,Indoor Plant,Flowering
+aglaonema,Aglaonema,Aglaonema commutatum,Indoor Plant,Foliage
+dieffenbachia,Dieffenbachia,Dieffenbachia seguine,Indoor Plant,Foliage
+syngonium,Syngonium,Syngonium podophyllum,Indoor Plant,Foliage
+ficus_elastica,Rubber Plant,Ficus elastica,Indoor Plant,Foliage
+ficus_benjamina,Weeping Fig,Ficus benjamina,Indoor Plant,Tree
+areca_palm,Areca Palm,Dypsis lutescens,Indoor Plant,Palm
+kentia_palm,Kentia Palm,Howea forsteriana,Indoor Plant,Palm
+parlor_palm,Parlor Palm,Chamaedorea elegans,Indoor Plant,Palm
+lady_palm,Lady Palm,Rhapis excelsa,Indoor Plant,Palm
+boston_fern,Boston Fern,Nephrolepis exaltata,Indoor Plant,Fern
+bird_nest_fern,Bird's Nest Fern,Asplenium nidus,Indoor Plant,Fern
+staghorn_fern,Staghorn Fern,Platycerium bifurcatum,Indoor Plant,Fern
+blue_star_fern,Blue Star Fern,Phlebodium aureum,Indoor Plant,Fern
+asparagus_fern,Asparagus Fern,Asparagus setaceus,Indoor Plant,Fern
+croton,Croton,Codiaeum variegatum,Ornamental Plant,Foliage
+coleus,Coleus,Coleus scutellarioides,Ornamental Plant,Foliage
+caladium,Caladium,Caladium bicolor,Ornamental Plant,Foliage
+fittonia,Nerve Plant,Fittonia albivenis,Indoor Plant,Foliage
+polka_dot_plant,Polka Dot Plant,Hypoestes phyllostachya,Indoor Plant,Foliage
+peperomia_obtusifolia,Baby Rubber Plant,Peperomia obtusifolia,Indoor Plant,Foliage
+peperomia_caperata,Ripple Peperomia,Peperomia caperata,Indoor Plant,Foliage
+pilea_peperomioides,Chinese Money Plant,Pilea peperomioides,Indoor Plant,Foliage
+pilea_microphylla,Artillery Plant,Pilea microphylla,Indoor Plant,Foliage
+tradescantia_zebrina,Wandering Dude,Tradescantia zebrina,Indoor Plant,Foliage
+tradescantia_pallida,Purple Heart,Tradescantia pallida,Indoor Plant,Foliage
+purple_shamrock,Purple Shamrock,Oxalis triangularis,Indoor Plant,Foliage
+begonia_rex,Rex Begonia,Begonia rex,Indoor Plant,Foliage
+begonia_maculata,Polka Dot Begonia,Begonia maculata,Indoor Plant,Foliage
+begonia_semperflorens,Wax Begonia,Begonia semperflorens,Flowering Plant,Flower

@@ -1,9 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:plantmitra_1/services/plant_master_service.dart';
 
 class PlantCountService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final PlantMasterService _masterService = PlantMasterService.instance;
 
   // Get total plant count
   Future<int> getTotalPlantCount() async {
@@ -173,7 +171,7 @@ class PlantCountService {
 
       // Fix: Properly cast the data to Map<String, dynamic>
       return snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
+        final data = doc.data();
         return {
           'id': doc.id,
           ...data, // Now data is correctly typed as Map<String, dynamic>
@@ -296,7 +294,7 @@ class PlantCountService {
           .where('status', isEqualTo: 'Available')
           .orderBy('scientificName')
           .startAt([term])
-          .endAt([term + '\uf8ff'])
+          .endAt(['$term\uf8ff'])
           .limit(10)
           .get();
 

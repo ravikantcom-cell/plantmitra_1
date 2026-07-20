@@ -1,8 +1,10 @@
+// lib/screens/detail/plant_detail_screen.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:plantmitra_1/services/favorite_service.dart';
 import 'package:plantmitra_1/services/chat_service.dart';
 import 'package:plantmitra_1/screens/chat/chat_screen.dart';
+import 'package:plantmitra_1/utils/logger.dart';
 
 class PlantDetailScreen extends StatefulWidget {
   final String documentId;
@@ -38,46 +40,58 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
     // Using ownerId instead of sellerId
     final ownerId = widget.plant['ownerId'] ?? '';
     
-    setState(() {
-      _currentUserId = currentUser;
-      _isOwner = currentUser != null && currentUser == ownerId;
-    });
+    if (mounted) {
+      setState(() {
+        _currentUserId = currentUser;
+        _isOwner = currentUser != null && currentUser == ownerId;
+      });
+    }
   }
 
   Future<void> _checkFavoriteStatus() async {
     try {
       final isFav = await _favoriteService.isFavorite(widget.documentId);
-      setState(() {
-        _isFavorite = isFav;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isFavorite = isFav;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() => _isLoading = false);
+      Logger.error('Error checking favorite status: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   Future<void> _toggleFavorite() async {
     try {
       final newStatus = await _favoriteService.toggleFavorite(widget.documentId);
-      setState(() {
-        _isFavorite = newStatus;
-      });
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            newStatus ? 'Added to favorites' : 'Removed from favorites',
+      if (mounted) {
+        setState(() {
+          _isFavorite = newStatus;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              newStatus ? 'Added to favorites' : 'Removed from favorites',
+            ),
+            backgroundColor: Colors.green,
           ),
-          backgroundColor: Colors.green,
-        ),
-      );
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      Logger.error('Error toggling favorite: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -126,6 +140,35 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _deletePlant() async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('plants')
+          .doc(widget.documentId)
+          .delete();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Plant deleted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      Logger.error('Error deleting plant: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting plant: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -677,28 +720,10 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
-              try {
-                await FirebaseFirestore.instance
-                    .collection('plants')
-                    .doc(widget.documentId)
-                    .delete();
-                
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Plant deleted successfully'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
+              if (mounted) {
                 Navigator.pop(context);
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Error deleting plant: $e'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
               }
+              await _deletePlant();
             },
             style: TextButton.styleFrom(
               foregroundColor: Colors.red,

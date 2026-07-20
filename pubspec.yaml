@@ -1,12 +1,12 @@
 name: plantmitra_1
-description: "A new Flutter project."
+description: "Jarvis Green - Your Smart Plant Companion"
 
 publish_to: 'none'
 
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.12.2 <4.0.0"
+  sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
   flutter:
@@ -17,11 +17,12 @@ dependencies:
   cupertino_icons: ^1.0.8
   dropdown_search: ^6.0.1
 
-  # Firebase
-  firebase_core: ^4.11.0
-  firebase_auth: ^6.5.4
-  cloud_firestore: ^6.6.0
-  firebase_storage: ^13.4.3
+  # Firebase - All latest compatible versions
+  firebase_core: ^3.12.1
+  firebase_auth: ^5.5.1
+  cloud_firestore: ^5.6.1
+  firebase_storage: ^12.4.4
+  firebase_messaging: ^15.2.3
 
   # Authentication & Utilities
   google_sign_in: ^6.3.0
@@ -37,6 +38,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.13.1  # Moved here - this is correct
 
 flutter:
   uses-material-design: true
@@ -45,3 +47,25 @@ flutter:
     # - assets/images/
     # - assets/icons/
     - assets/data/plant_master.csv
+    - assets/logo/  # Add this so your logo is included
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/logo/jarvis_green_logo_transparent.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#2E7D32"
+  adaptive_icon_foreground: "assets/logo/jarvis_green_logo_transparent.png"
+  remove_alpha_ios: true
+  web:
+    generate: true
+    image_path: "assets/logo/jarvis_green_logo_transparent.png"
+    background_color: "#2E7D32"
+    theme_color: "#2E7D32"
+  windows:
+    generate: true
+    image_path: "assets/logo/jarvis_green_logo_transparent.png"
+    icon_size: 48
+  macos:
+    generate: true
+    image_path: "assets/logo/jarvis_green_logo_transparent.png"
