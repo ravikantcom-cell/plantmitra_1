@@ -1,10 +1,12 @@
 // lib/screens/detail/plant_detail_screen.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:plantmitra_1/screens/chat/chat_screen.dart';
 import 'package:plantmitra_1/screens/edit_plant/edit_plant_screen.dart';
 import 'package:plantmitra_1/services/chat_service.dart';
 import 'package:plantmitra_1/services/favorite_service.dart';
+import 'package:plantmitra_1/services/plant_transfer_service.dart';
 import 'package:plantmitra_1/utils/logger.dart';
 
 class PlantDetailScreen extends StatefulWidget {
@@ -28,11 +30,13 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
 
   final FavoriteService _favoriteService = FavoriteService();
   final ChatService _chatService = ChatService();
+  final PlantTransferService _transferService = PlantTransferService();
 
   bool _isFavorite = false;
   bool _isCheckingFavorite = true;
   bool _isChangingFavorite = false;
   bool _isDeleting = false;
+  bool _isTransferActionRunning = false;
   bool _isOwner = false;
   String? _currentUserId;
 
@@ -69,7 +73,8 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
     if (!mounted) return;
     setState(() {
       _currentUserId = currentUser;
-      _isOwner = currentUser != null && ownerId.isNotEmpty && currentUser == ownerId;
+      _isOwner =
+          currentUser != null && ownerId.isNotEmpty && currentUser == ownerId;
     });
   }
 
@@ -90,17 +95,19 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
 
     setState(() => _isChangingFavorite = true);
     try {
-      final newStatus =
-          await _favoriteService.toggleFavorite(widget.documentId);
+      final newStatus = await _favoriteService.toggleFavorite(
+        widget.documentId,
+      );
       if (!mounted) return;
       setState(() => _isFavorite = newStatus);
-      _showMessage(
-        newStatus ? 'Added to favorites' : 'Removed from favorites',
-      );
+      _showMessage(newStatus ? 'Added to favorites' : 'Removed from favorites');
     } catch (error) {
       Logger.error('Error toggling favorite: $error');
       if (mounted) {
-        _showMessage('Could not update favorites. Please try again.', isError: true);
+        _showMessage(
+          'Could not update favorites. Please try again.',
+          isError: true,
+        );
       }
     } finally {
       if (mounted) setState(() => _isChangingFavorite = false);
@@ -131,6 +138,9 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
           receiverId: ownerId,
           receiverName: _text('ownerName', 'Seller'),
           receiverImage: _plant['ownerPhoto']?.toString(),
+          plantId: widget.documentId,
+          plantName: _text('name', 'Plant listing'),
+          plantImage: _plant['imageUrl']?.toString(),
         ),
       ),
     );
@@ -178,7 +188,9 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
       _showMessage('Plant deleted successfully.');
       Navigator.of(context).pop(true);
     } on FirebaseException catch (error) {
-      Logger.error('Firebase error deleting plant: ${error.code} - ${error.message}');
+      Logger.error(
+        'Firebase error deleting plant: ${error.code} - ${error.message}',
+      );
       if (mounted) {
         final message = error.code == 'permission-denied'
             ? 'You do not have permission to delete this plant.'
@@ -188,41 +200,138 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
     } catch (error) {
       Logger.error('Error deleting plant: $error');
       if (mounted) {
-        _showMessage('Could not delete the plant. Please try again.', isError: true);
+        _showMessage(
+          'Could not delete the plant. Please try again.',
+          isError: true,
+        );
       }
     } finally {
       if (mounted) setState(() => _isDeleting = false);
     }
   }
 
-  void _sharePlant() {
-    _showMessage('Share functionality is coming soon.');
+  Future<void> _sharePlant() async {
+    final name = _text('name', 'Plant listing');
+    final scientificName = _text('scientificName');
+    final location = _text('location', 'Location not specified');
+    final isFree = _plant['isFree'] == true;
+    final price = _plant['price'] ?? 0;
+    final ownerName = _text('ownerName', 'Jarvis Green member');
+
+    final lines = <String>[
+      '🌿 $name',
+      if (scientificName.isNotEmpty) scientificName,
+      isFree ? 'Available for free' : 'Price: ₹$price',
+      'Location: $location',
+      'Shared by $ownerName on Jarvis Green',
+      'Listing ID: ${widget.documentId}',
+    ];
+
+    try {
+      await Clipboard.setData(ClipboardData(text: lines.join('\n')));
+      if (mounted) {
+        _showMessage('Plant details copied. Paste them into any app to share.');
+      }
+    } catch (error) {
+      Logger.error('Share plant error: $error');
+      if (mounted) {
+        _showMessage('Could not copy the plant details.', isError: true);
+      }
+    }
   }
 
   Future<void> _showReportDialog() async {
-    final confirmed = await showDialog<bool>(
+    final reason = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        icon: const Icon(Icons.flag_outlined, color: Colors.orange),
-        title: const Text('Report listing?'),
-        content: const Text(
-          'Report this listing if it looks misleading, unsafe, or inappropriate.',
+      builder: (dialogContext) => SimpleDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.flag_outlined, color: Colors.orange),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Why are you reporting this listing?',
+                style: TextStyle(fontSize: 18),
+              ),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Report'),
+        children: [
+          for (final option in const <String>[
+            'Misleading information',
+            'Unsafe or prohibited plant',
+            'Spam or duplicate listing',
+            'Inappropriate content',
+            'Other concern',
+          ])
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(dialogContext, option),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 7),
+                child: Text(option),
+              ),
+            ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(vertical: 7),
+              child: Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
           ),
         ],
       ),
     );
 
-    if (confirmed == true && mounted) {
-      _showMessage('Report received. We will review this listing.');
+    if (reason == null || !mounted) return;
+    await _submitReport(reason);
+  }
+
+  Future<void> _submitReport(String reason) async {
+    final reporterId = _currentUserId;
+    if (reporterId == null || reporterId.isEmpty) {
+      _showMessage('Please sign in before reporting a listing.', isError: true);
+      return;
+    }
+
+    final ownerId = _text('ownerId');
+    if (ownerId == reporterId) {
+      _showMessage('You cannot report your own listing.', isError: true);
+      return;
+    }
+
+    try {
+      final reportId = '${reporterId}_${widget.documentId}';
+      await FirebaseFirestore.instance.collection('reports').doc(reportId).set({
+        'reporterId': reporterId,
+        'plantId': widget.documentId,
+        'plantOwnerId': ownerId,
+        'plantName': _text('name', 'Unknown plant'),
+        'reason': reason,
+        'status': 'open',
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      if (mounted) {
+        _showMessage('Report received. We will review this listing.');
+      }
+    } on FirebaseException catch (error) {
+      Logger.error(
+        'Report submission failed: ${error.code} - ${error.message}',
+      );
+      if (mounted) {
+        final message = error.code == 'permission-denied'
+            ? 'Reporting is not permitted. Please update Firestore rules.'
+            : 'Could not submit the report. Please try again.';
+        _showMessage(message, isError: true);
+      }
+    } catch (error) {
+      Logger.error('Report submission failed: $error');
+      if (mounted) {
+        _showMessage(
+          'Could not submit the report. Please try again.',
+          isError: true,
+        );
+      }
     }
   }
 
@@ -237,6 +346,180 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
           backgroundColor: isError ? Colors.red.shade700 : _darkGreen,
         ),
       );
+  }
+
+  Future<void> _runTransferAction(
+    Future<void> Function() action,
+    String successMessage,
+  ) async {
+    if (_isTransferActionRunning) return;
+    setState(() => _isTransferActionRunning = true);
+    try {
+      await action();
+      if (mounted) _showMessage(successMessage);
+    } catch (error) {
+      Logger.error('Plant transfer action failed: $error');
+      if (mounted) {
+        final message = error is StateError
+            ? error.message.toString()
+            : 'Could not update this request. Please try again.';
+        _showMessage(message, isError: true);
+      }
+    } finally {
+      if (mounted) setState(() => _isTransferActionRunning = false);
+    }
+  }
+
+  Widget _buildTransferSection({required bool isFree}) {
+    if (!isFree) return const SizedBox.shrink();
+
+    final currentUserId = _currentUserId;
+    if (currentUserId == null || currentUserId.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    if (_isOwner) {
+      return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: _transferService.incomingRequests(currentUserId),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return const _TransferNotice(
+              icon: Icons.cloud_off_outlined,
+              title: 'Could not load plant requests',
+              subtitle: 'Please check your connection and try again.',
+              color: Colors.red,
+            );
+          }
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final requests = (snapshot.data?.docs ?? const [])
+              .where((doc) => doc.data()['plantId'] == widget.documentId)
+              .where(
+                (doc) =>
+                    doc.data()['status'] == 'requested' ||
+                    doc.data()['status'] == 'approved',
+              )
+              .toList();
+
+          if (requests.isEmpty) {
+            return const _TransferNotice(
+              icon: Icons.volunteer_activism_outlined,
+              title: 'No requests yet',
+              subtitle: 'Interested members can request this free plant.',
+              color: _green,
+            );
+          }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _SectionTitle('Plant requests'),
+              const SizedBox(height: 10),
+              ...requests.map((doc) {
+                final request = doc.data();
+                final isApproved = request['status'] == 'approved';
+                final receiverName =
+                    (request['receiverName'] ?? 'Community member').toString();
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _TransferRequestCard(
+                    receiverName: receiverName,
+                    isApproved: isApproved,
+                    isBusy: _isTransferActionRunning,
+                    onApprove: () => _runTransferAction(
+                      () => _transferService.approveRequest(doc.id),
+                      'Request approved. Waiting for receiver confirmation.',
+                    ),
+                    onReject: () => _runTransferAction(
+                      () => _transferService.rejectRequest(doc.id),
+                      'Request rejected.',
+                    ),
+                  ),
+                );
+              }),
+            ],
+          );
+        },
+      );
+    }
+
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: _transferService.transferForPlant(
+        widget.documentId,
+        currentUserId,
+      ),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return const _TransferNotice(
+            icon: Icons.cloud_off_outlined,
+            title: 'Could not load request status',
+            subtitle: 'Please check your connection and try again.',
+            color: Colors.red,
+          );
+        }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final data = snapshot.data?.data();
+        final status = (data?['status'] ?? '').toString();
+
+        if (status == 'requested') {
+          return _TransferActionCard(
+            icon: Icons.hourglass_top_rounded,
+            title: 'Request sent',
+            subtitle: 'Waiting for the plant owner to approve it.',
+            buttonLabel: 'Cancel request',
+            isBusy: _isTransferActionRunning,
+            outlined: true,
+            onPressed: () => _runTransferAction(
+              () => _transferService.cancelRequest(snapshot.data!.id),
+              'Request cancelled.',
+            ),
+          );
+        }
+
+        if (status == 'approved') {
+          return _TransferActionCard(
+            icon: Icons.handshake_outlined,
+            title: 'Request approved',
+            subtitle: 'Confirm only after you have received the plant.',
+            buttonLabel: 'Confirm plant received',
+            isBusy: _isTransferActionRunning,
+            onPressed: () => _runTransferAction(
+              () => _transferService.confirmReceived(snapshot.data!.id),
+              'Plant received. Your record has been updated.',
+            ),
+          );
+        }
+
+        if (status == 'completed') {
+          return const _TransferNotice(
+            icon: Icons.verified_rounded,
+            title: 'Plant received',
+            subtitle: 'This transfer is complete and recorded.',
+            color: _green,
+          );
+        }
+
+        return _TransferActionCard(
+          icon: Icons.volunteer_activism_outlined,
+          title: 'Interested in this free plant?',
+          subtitle: 'Send a request to the owner. No payment is involved.',
+          buttonLabel: 'Request this plant',
+          isBusy: _isTransferActionRunning,
+          onPressed: () => _runTransferAction(
+            () => _transferService.requestFreePlant(
+              plantId: widget.documentId,
+              plant: widget.plant,
+            ),
+            'Request sent to the plant owner.',
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _openEditPlant() async {
@@ -326,7 +609,8 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                           children: [
                             Text(
                               name,
-                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              style: Theme.of(context).textTheme.headlineSmall
+                                  ?.copyWith(
                                     fontWeight: FontWeight.w800,
                                     color: const Color(0xFF17351E),
                                   ),
@@ -335,7 +619,8 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                               const SizedBox(height: 5),
                               Text(
                                 scientificName,
-                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                style: Theme.of(context).textTheme.bodyLarge
+                                    ?.copyWith(
                                       fontStyle: FontStyle.italic,
                                       color: Colors.grey.shade700,
                                     ),
@@ -359,7 +644,10 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                       if (itemType.isNotEmpty && itemType != 'Plant')
                         _Tag(label: itemType, icon: Icons.inventory_2_outlined),
                       if (_isOwner)
-                        const _Tag(label: 'Your listing', icon: Icons.person_outline),
+                        const _Tag(
+                          label: 'Your listing',
+                          icon: Icons.person_outline,
+                        ),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -369,8 +657,9 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                         CircleAvatar(
                           radius: 25,
                           backgroundColor: _green.withValues(alpha: 0.12),
-                          backgroundImage:
-                              ownerPhoto.isNotEmpty ? NetworkImage(ownerPhoto) : null,
+                          backgroundImage: ownerPhoto.isNotEmpty
+                              ? NetworkImage(ownerPhoto)
+                              : null,
                           child: ownerPhoto.isEmpty
                               ? Text(
                                   ownerName.isNotEmpty
@@ -425,7 +714,10 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                             color: _green.withValues(alpha: 0.10),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.location_on_outlined, color: _green),
+                          child: const Icon(
+                            Icons.location_on_outlined,
+                            color: _green,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -442,7 +734,9 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                               const SizedBox(height: 2),
                               Text(
                                 location,
-                                style: const TextStyle(fontWeight: FontWeight.w600),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ],
                           ),
@@ -495,6 +789,8 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
+                  _buildTransferSection(isFree: isFree),
+                  if (isFree) const SizedBox(height: 16),
                   if (!_isOwner)
                     SizedBox(
                       width: double.infinity,
@@ -505,7 +801,10 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                         icon: const Icon(Icons.chat_bubble_outline_rounded),
                         label: const Text(
                           'Chat with owner',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ),
@@ -539,10 +838,14 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                         icon: _isDeleting
                             ? const SizedBox.square(
                                 dimension: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Icon(Icons.delete_outline_rounded),
-                        label: Text(_isDeleting ? 'Deleting...' : 'Delete plant'),
+                        label: Text(
+                          _isDeleting ? 'Deleting...' : 'Delete plant',
+                        ),
                       ),
                     ),
                   ],
@@ -561,7 +864,9 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                         onPressed: _showReportDialog,
                         icon: const Icon(Icons.flag_outlined, size: 18),
                         label: const Text('Report this listing'),
-                        style: TextButton.styleFrom(foregroundColor: Colors.grey.shade700),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.grey.shade700,
+                        ),
                       ),
                     ),
                 ],
@@ -600,7 +905,11 @@ class _PlantImage extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0x66000000), Colors.transparent, Color(0x55000000)],
+              colors: [
+                Color(0x66000000),
+                Colors.transparent,
+                Color(0x55000000),
+              ],
             ),
           ),
         ),
@@ -649,7 +958,11 @@ class _PriceBadge extends StatelessWidget {
       ),
       child: Text(
         isFree ? 'FREE' : '₹ $price',
-        style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 16),
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w900,
+          fontSize: 16,
+        ),
       ),
     );
   }
@@ -719,9 +1032,9 @@ class _SectionTitle extends StatelessWidget {
     return Text(
       text,
       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w800,
-            color: const Color(0xFF17351E),
-          ),
+        fontWeight: FontWeight.w800,
+        color: const Color(0xFF17351E),
+      ),
     );
   }
 }
@@ -763,6 +1076,234 @@ class _StatCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TransferNotice extends StatelessWidget {
+  const _TransferNotice({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 28),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFF17351E),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: Color(0xFF69806E),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TransferActionCard extends StatelessWidget {
+  const _TransferActionCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.buttonLabel,
+    required this.isBusy,
+    required this.onPressed,
+    this.outlined = false,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String buttonLabel;
+  final bool isBusy;
+  final VoidCallback onPressed;
+  final bool outlined;
+
+  @override
+  Widget build(BuildContext context) {
+    final buttonChild = isBusy
+        ? const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        : Text(buttonLabel);
+
+    return _InfoCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: const Color(0xFF2E7D32), size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Color(0xFF17351E),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: Color(0xFF69806E),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: outlined
+                ? OutlinedButton(
+                    onPressed: isBusy ? null : onPressed,
+                    child: buttonChild,
+                  )
+                : FilledButton(
+                    onPressed: isBusy ? null : onPressed,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF2E7D32),
+                    ),
+                    child: buttonChild,
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TransferRequestCard extends StatelessWidget {
+  const _TransferRequestCard({
+    required this.receiverName,
+    required this.isApproved,
+    required this.isBusy,
+    required this.onApprove,
+    required this.onReject,
+  });
+
+  final String receiverName;
+  final bool isApproved;
+  final bool isBusy;
+  final VoidCallback onApprove;
+  final VoidCallback onReject;
+
+  @override
+  Widget build(BuildContext context) {
+    return _InfoCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: const Color(0xFFE4F3E6),
+                foregroundColor: const Color(0xFF2E7D32),
+                child: Text(
+                  receiverName.isEmpty ? '?' : receiverName[0].toUpperCase(),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      receiverName,
+                      style: const TextStyle(
+                        color: Color(0xFF17351E),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      isApproved
+                          ? 'Approved · waiting for confirmation'
+                          : 'Wants to receive this plant',
+                      style: const TextStyle(
+                        color: Color(0xFF69806E),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (!isApproved) ...[
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: isBusy ? null : onReject,
+                    child: const Text('Reject'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: isBusy ? null : onApprove,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF2E7D32),
+                    ),
+                    child: const Text('Approve'),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

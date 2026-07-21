@@ -29,12 +29,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
 
-  final List<String> _itemTypes = const [
-    'Plant',
-    'Seed',
-    'Cutting',
-    'Sapling',
-  ];
+  final List<String> _itemTypes = const ['Plant', 'Seed', 'Cutting', 'Sapling'];
 
   File? _selectedImage;
   bool _isUploading = false;
@@ -45,6 +40,12 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
   Map<String, dynamic>? _selectedPlant;
   bool _isLoadingPlants = true;
   String? _plantLoadError;
+
+  bool get _isOtherPlant {
+    final id = _selectedPlant?['id']?.toString().trim().toLowerCase();
+    final name = _selectedPlant?['name']?.toString().trim().toLowerCase();
+    return id == 'other' || name == 'other';
+  }
 
   @override
   void initState() {
@@ -73,28 +74,29 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
 
       final snapshot = await FirestoreService.masterPlants.get();
 
-      final plants = snapshot.docs.map((document) {
-        final data = document.data();
+      final plants = snapshot.docs
+          .map((document) {
+            final data = document.data();
 
-        return <String, dynamic>{
-          'id': document.id,
-          'name': data['name']?.toString().trim() ?? '',
-          'scientificName':
-              data['scientificName']?.toString().trim() ?? '',
-          'category': data['category']?.toString().trim() ?? '',
-          'subCategory': data['subCategory']?.toString().trim() ?? '',
-          'active': data['active'] ?? true,
-        };
-      }).where((plant) {
-        return plant['active'] == true &&
-            plant['name'].toString().trim().isNotEmpty;
-      }).toList();
+            return <String, dynamic>{
+              'id': document.id,
+              'name': data['name']?.toString().trim() ?? '',
+              'scientificName': data['scientificName']?.toString().trim() ?? '',
+              'category': data['category']?.toString().trim() ?? '',
+              'subCategory': data['subCategory']?.toString().trim() ?? '',
+              'active': data['active'] ?? true,
+            };
+          })
+          .where((plant) {
+            return plant['active'] == true &&
+                plant['name'].toString().trim().isNotEmpty;
+          })
+          .toList();
 
       plants.sort(
-        (first, second) => first['name']
-            .toString()
-            .toLowerCase()
-            .compareTo(second['name'].toString().toLowerCase()),
+        (first, second) => first['name'].toString().toLowerCase().compareTo(
+          second['name'].toString().toLowerCase(),
+        ),
       );
 
       Logger.info('Loaded ${plants.length} active master plants');
@@ -279,10 +281,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
     final isFormValid = _formKey.currentState?.validate() ?? false;
 
     if (!isFormValid) {
-      _showMessage(
-        'Please correct the highlighted fields.',
-        isError: true,
-      );
+      _showMessage('Please correct the highlighted fields.', isError: true);
       return;
     }
 
@@ -291,6 +290,11 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         'Please select a plant from the master list.',
         isError: true,
       );
+      return;
+    }
+
+    if (_isOtherPlant && _descriptionController.text.trim().isEmpty) {
+      _showMessage('Please write the plant name.', isError: true);
       return;
     }
 
@@ -315,9 +319,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         imageUrl = await StorageService.uploadPlantImage(_selectedImage!);
       }
 
-      final price = _isFree
-          ? 0.0
-          : double.parse(_priceController.text.trim());
+      final price = _isFree ? 0.0 : double.parse(_priceController.text.trim());
 
       final ownerName = (user.displayName?.trim().isNotEmpty ?? false)
           ? user.displayName!.trim()
@@ -325,12 +327,14 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
 
       final plantData = <String, dynamic>{
         'masterPlantId': _selectedPlant!['id'],
-        'name': _selectedPlant!['name'],
+        'name': _isOtherPlant
+            ? _descriptionController.text.trim()
+            : _selectedPlant!['name'],
         'scientificName': _selectedPlant!['scientificName'] ?? '',
         'category': _selectedPlant!['category'] ?? '',
         'subCategory': _selectedPlant!['subCategory'] ?? '',
         'itemType': _selectedItemType,
-        'description': _descriptionController.text.trim(),
+        'description': _isOtherPlant ? '' : _descriptionController.text.trim(),
         'location': _locationController.text.trim(),
         'imageUrl': imageUrl,
         'isFree': _isFree,
@@ -351,10 +355,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
 
       if (!mounted) return;
 
-      _showMessage(
-        'Plant added successfully 🌱',
-        isError: false,
-      );
+      _showMessage('Plant added successfully 🌱', isError: false);
 
       Navigator.pop(context, true);
     } catch (error, stackTrace) {
@@ -362,10 +363,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
 
       if (!mounted) return;
 
-      _showMessage(
-        'Failed to add the plant. Please try again.',
-        isError: true,
-      );
+      _showMessage('Failed to add the plant. Please try again.', isError: true);
     } finally {
       if (mounted) {
         setState(() {
@@ -375,17 +373,13 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
     }
   }
 
-  void _showMessage(
-    String message, {
-    required bool isError,
-  }) {
+  void _showMessage(String message, {required bool isError}) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
-          backgroundColor:
-              isError ? AppColors.error : AppColors.primaryDark,
+          backgroundColor: isError ? AppColors.error : AppColors.primaryDark,
           content: Row(
             children: [
               Icon(
@@ -457,8 +451,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
           child: Form(
             key: _formKey,
             child: ListView(
-              keyboardDismissBehavior:
-                  ScrollViewKeyboardDismissBehavior.onDrag,
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
               children: [
                 _buildPhotoSection(),
@@ -560,10 +553,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
           Text(
             'Tap to use camera or choose from gallery',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 13,
-            ),
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
           ),
           const SizedBox(height: 7),
           Text(
@@ -616,10 +606,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
           left: 14,
           bottom: 14,
           child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 8,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: Colors.black.withValues(alpha: 0.55),
               borderRadius: BorderRadius.circular(12),
@@ -627,11 +614,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.edit_outlined,
-                  color: AppColors.white,
-                  size: 17,
-                ),
+                Icon(Icons.edit_outlined, color: AppColors.white, size: 17),
                 SizedBox(width: 6),
                 Text(
                   'Change photo',
@@ -673,10 +656,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
             icon: Icons.category_outlined,
           ),
           items: _itemTypes.map((item) {
-            return DropdownMenuItem<String>(
-              value: item,
-              child: Text(item),
-            );
+            return DropdownMenuItem<String>(value: item, child: Text(item));
           }).toList(),
           onChanged: _isUploading
               ? null
@@ -743,18 +723,13 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         decoration: BoxDecoration(
           color: AppColors.error.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppColors.error.withValues(alpha: 0.20),
-          ),
+          border: Border.all(color: AppColors.error.withValues(alpha: 0.20)),
         ),
         child: Column(
           children: [
             const Row(
               children: [
-                Icon(
-                  Icons.error_outline_rounded,
-                  color: AppColors.error,
-                ),
+                Icon(Icons.error_outline_rounded, color: AppColors.error),
                 SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -809,12 +784,11 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
 
           return _masterPlants.where((plant) {
             final name = plant['name'].toString().toLowerCase();
-            final scientificName =
-                plant['scientificName'].toString().toLowerCase();
-            final category =
-                plant['category'].toString().toLowerCase();
-            final subCategory =
-                plant['subCategory'].toString().toLowerCase();
+            final scientificName = plant['scientificName']
+                .toString()
+                .toLowerCase();
+            final category = plant['category'].toString().toLowerCase();
+            final subCategory = plant['subCategory'].toString().toLowerCase();
 
             return name.contains(query) ||
                 scientificName.contains(query) ||
@@ -870,12 +844,11 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         onChanged: (plant) {
           setState(() {
             _selectedPlant = plant;
+            _descriptionController.clear();
           });
 
           if (plant != null) {
-            Logger.debug(
-              'Selected plant: ${plant['name']} (${plant['id']})',
-            );
+            Logger.debug('Selected plant: ${plant['name']} (${plant['id']})');
           }
         },
         validator: (value) {
@@ -889,20 +862,16 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
   }
 
   Widget _buildSelectedPlantCard() {
-    final scientificName =
-        _selectedPlant!['scientificName'].toString().trim();
+    final scientificName = _selectedPlant!['scientificName'].toString().trim();
     final category = _selectedPlant!['category'].toString().trim();
-    final subCategory =
-        _selectedPlant!['subCategory'].toString().trim();
+    final subCategory = _selectedPlant!['subCategory'].toString().trim();
 
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.primary.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.18),
-        ),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.18)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -950,8 +919,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                     spacing: 6,
                     runSpacing: 6,
                     children: [
-                      if (category.isNotEmpty)
-                        _PlantInfoChip(label: category),
+                      if (category.isNotEmpty) _PlantInfoChip(label: category),
                       if (subCategory.isNotEmpty)
                         _PlantInfoChip(label: subCategory),
                     ],
@@ -971,15 +939,31 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         TextFormField(
           controller: _descriptionController,
           enabled: !_isUploading,
-          maxLines: 4,
-          minLines: 3,
-          maxLength: 500,
-          textCapitalization: TextCapitalization.sentences,
+          maxLines: _isOtherPlant ? 1 : 4,
+          minLines: _isOtherPlant ? 1 : 3,
+          maxLength: _isOtherPlant ? 80 : 500,
+          textCapitalization: _isOtherPlant
+              ? TextCapitalization.words
+              : TextCapitalization.sentences,
+          validator: (value) {
+            if (!_isOtherPlant) return null;
+            if (value == null || value.trim().isEmpty) {
+              return 'Please write the plant name';
+            }
+            if (value.trim().length < 2) {
+              return 'Plant name is too short';
+            }
+            return null;
+          },
           decoration: _inputDecoration(
-            label: 'Description',
-            hint: 'Mention plant condition, size, care or pickup details',
-            icon: Icons.description_outlined,
-            requiredField: false,
+            label: _isOtherPlant ? 'Plant name' : 'Description',
+            hint: _isOtherPlant
+                ? 'Type your plant name here'
+                : 'Mention plant condition, size, care or pickup details',
+            icon: _isOtherPlant
+                ? Icons.local_florist_outlined
+                : Icons.description_outlined,
+            requiredField: _isOtherPlant,
           ),
         ),
         const SizedBox(height: 16),
@@ -1045,18 +1029,11 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
               _isFree
                   ? 'Share this plant with someone for free'
                   : 'Set a price for this plant listing',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
             ),
             secondary: Icon(
-              _isFree
-                  ? Icons.volunteer_activism_rounded
-                  : Icons.sell_rounded,
-              color: _isFree
-                  ? AppColors.primary
-                  : AppColors.warning,
+              _isFree ? Icons.volunteer_activism_rounded : Icons.sell_rounded,
+              color: _isFree ? AppColors.primary : AppColors.warning,
             ),
           ),
         ),
@@ -1074,9 +1051,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
                       decimal: true,
                     ),
                     inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                        RegExp(r'[0-9.]'),
-                      ),
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                     ],
                     validator: _validatePrice,
                     decoration: _inputDecoration(
@@ -1100,8 +1075,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.white,
-          disabledBackgroundColor:
-              AppColors.primary.withValues(alpha: 0.50),
+          disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.50),
           disabledForegroundColor: AppColors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -1119,10 +1093,7 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
             : const Icon(Icons.cloud_upload_outlined),
         label: Text(
           _isUploading ? 'Publishing plant...' : 'Publish Plant',
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
         ),
       ),
     );
@@ -1144,36 +1115,35 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
       filled: true,
       fillColor: AppColors.background,
       counterText: '',
-      border: border ??
+      border:
+          border ??
           OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: const BorderSide(color: AppColors.border),
           ),
-      enabledBorder: border ??
+      enabledBorder:
+          border ??
           OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: const BorderSide(color: AppColors.border),
           ),
-      focusedBorder: border ??
+      focusedBorder:
+          border ??
           OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(
-              color: AppColors.primary,
-              width: 1.6,
-            ),
+            borderSide: const BorderSide(color: AppColors.primary, width: 1.6),
           ),
-      errorBorder: border ??
+      errorBorder:
+          border ??
           OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: const BorderSide(color: AppColors.error),
           ),
-      focusedErrorBorder: border ??
+      focusedErrorBorder:
+          border ??
           OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(
-              color: AppColors.error,
-              width: 1.5,
-            ),
+            borderSide: const BorderSide(color: AppColors.error, width: 1.5),
           ),
     );
   }
@@ -1202,11 +1172,7 @@ class _FormSectionHeader extends StatelessWidget {
             color: AppColors.primary.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(
-            icon,
-            color: AppColors.primary,
-            size: 21,
-          ),
+          child: Icon(icon, color: AppColors.primary, size: 21),
         ),
         const SizedBox(width: 11),
         Expanded(
@@ -1239,9 +1205,7 @@ class _FormSectionHeader extends StatelessWidget {
 }
 
 class _FormCard extends StatelessWidget {
-  const _FormCard({
-    required this.children,
-  });
+  const _FormCard({required this.children});
 
   final List<Widget> children;
 
@@ -1261,18 +1225,13 @@ class _FormCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        children: children,
-      ),
+      child: Column(children: children),
     );
   }
 }
 
 class _SourceIcon extends StatelessWidget {
-  const _SourceIcon({
-    required this.icon,
-    required this.color,
-  });
+  const _SourceIcon({required this.icon, required this.color});
 
   final IconData icon;
   final Color color;
@@ -1286,34 +1245,24 @@ class _SourceIcon extends StatelessWidget {
         color: color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(13),
       ),
-      child: Icon(
-        icon,
-        color: color,
-      ),
+      child: Icon(icon, color: color),
     );
   }
 }
 
 class _PlantInfoChip extends StatelessWidget {
-  const _PlantInfoChip({
-    required this.label,
-  });
+  const _PlantInfoChip({required this.label});
 
   final String label;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 9,
-        vertical: 5,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.18),
-        ),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.18)),
       ),
       child: Text(
         label,

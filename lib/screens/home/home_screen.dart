@@ -156,19 +156,13 @@ class _HomeScreenState extends State<HomeScreen> {
       await FirebaseAuth.instance.signOut();
 
       if (!mounted) return;
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/login',
-        (route) => false,
-      );
+      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
     } catch (error, stackTrace) {
       Logger.error('Logout failed: $error\n$stackTrace');
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Logout failed. Please try again.'),
-        ),
+        const SnackBar(content: Text('Logout failed. Please try again.')),
       );
     }
   }
@@ -176,26 +170,15 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _openScreen(Widget screen) async {
     _sessionService.resetTimer();
 
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => screen),
-    );
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
 
     if (!mounted) return;
     setState(() => _selectedIndex = 0);
     await _refreshCounts();
   }
 
-  void _openAllPlants({
-    required String title,
-    bool? isFree,
-  }) {
-    _openScreen(
-      AllPlantsScreen(
-        title: title,
-        isFree: isFree,
-      ),
-    );
+  void _openAllPlants({required String title, bool? isFree}) {
+    _openScreen(AllPlantsScreen(title: title, isFree: isFree));
   }
 
   void _handleNavigationTap(int index) {
@@ -210,9 +193,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     switch (index) {
       case 1:
-        _openScreen(
-          const AllPlantsScreen(title: 'All Plants'),
-        );
+        _openScreen(const AllPlantsScreen(title: 'All Plants'));
         break;
       case 2:
         _openScreen(const FavoriteScreen());
@@ -271,9 +252,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: () {
                   _sessionService.resetTimer();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('No new notifications'),
-                    ),
+                    const SnackBar(content: Text('No new notifications')),
                   );
                 },
                 icon: const Icon(Icons.notifications_none_rounded),
@@ -346,10 +325,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (_errorMessage != null && _counts.isEmpty) {
-      return _HomeErrorView(
-        message: _errorMessage!,
-        onRetry: _loadData,
-      );
+      return _HomeErrorView(message: _errorMessage!, onRetry: _loadData);
     }
 
     return ListView(
@@ -361,13 +337,13 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildGreeting(),
         const SizedBox(height: 18),
         _buildSearchBar(),
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
         _buildDashboardCard(
           totalCount: totalCount,
           freeCount: freeCount,
           forSaleCount: forSaleCount,
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 18),
         _buildSectionHeader(
           title: 'Explore plants',
           subtitle: 'Discover plants shared by the community',
@@ -421,10 +397,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 3),
               Text(
                 "Let's grow something beautiful today.",
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
               ),
             ],
           ),
@@ -449,10 +422,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           child: Row(
             children: [
-              const Icon(
-                Icons.search_rounded,
-                color: AppColors.primary,
-              ),
+              const Icon(Icons.search_rounded, color: AppColors.primary),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -481,22 +451,19 @@ class _HomeScreenState extends State<HomeScreen> {
     required int forSaleCount,
   }) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            AppColors.primaryDark,
-            AppColors.primary,
-          ],
+          colors: [AppColors.primaryDark, AppColors.primary],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: AppColors.primary.withValues(alpha: 0.25),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
+            blurRadius: 16,
+            offset: const Offset(0, 7),
           ),
         ],
       ),
@@ -505,28 +472,24 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           const Row(
             children: [
-              Icon(
-                Icons.eco_rounded,
-                color: AppColors.white,
-                size: 22,
-              ),
+              Icon(Icons.eco_rounded, color: AppColors.white, size: 19),
               SizedBox(width: 8),
               Text(
                 'Community Garden',
                 style: TextStyle(
                   color: AppColors.white,
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: FontWeight.w700,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 17),
+          const SizedBox(height: 9),
           Text(
             totalCount.toString(),
             style: const TextStyle(
               color: AppColors.white,
-              fontSize: 38,
+              fontSize: 30,
               height: 1,
               fontWeight: FontWeight.w900,
             ),
@@ -536,10 +499,10 @@ class _HomeScreenState extends State<HomeScreen> {
             'plants available to explore',
             style: TextStyle(
               color: AppColors.white.withValues(alpha: 0.84),
-              fontSize: 13,
+              fontSize: 12,
             ),
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -582,10 +545,7 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 3),
         Text(
           subtitle,
-          style: TextStyle(
-            color: AppColors.textSecondary,
-            fontSize: 13,
-          ),
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
         ),
       ],
     );
@@ -621,10 +581,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 count: freeCount,
                 icon: Icons.volunteer_activism_rounded,
                 iconColor: AppColors.success,
-                onTap: () => _openAllPlants(
-                  title: 'Free Plants',
-                  isFree: true,
-                ),
+                onTap: () => _openAllPlants(title: 'Free Plants', isFree: true),
               ),
             ),
             SizedBox(
@@ -634,16 +591,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 count: forSaleCount,
                 icon: Icons.sell_rounded,
                 iconColor: AppColors.warning,
-                onTap: () => _openAllPlants(
-                  title: 'Plants for Sale',
-                  isFree: false,
-                ),
+                onTap: () =>
+                    _openAllPlants(title: 'Plants for Sale', isFree: false),
               ),
             ),
             SizedBox(
               width: cardWidth,
               child: _ExploreCard(
-                title: 'Plant Chat',
+                title: 'Chat',
                 count: null,
                 icon: Icons.forum_rounded,
                 iconColor: AppColors.primaryDark,
@@ -662,16 +617,11 @@ class _HomeScreenState extends State<HomeScreen> {
       decoration: BoxDecoration(
         color: AppColors.error.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: AppColors.error.withValues(alpha: 0.20),
-        ),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.20)),
       ),
       child: Row(
         children: [
-          const Icon(
-            Icons.info_outline_rounded,
-            color: AppColors.error,
-          ),
+          const Icon(Icons.info_outline_rounded, color: AppColors.error),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -682,10 +632,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          TextButton(
-            onPressed: _refreshCounts,
-            child: const Text('Retry'),
-          ),
+          TextButton(onPressed: _refreshCounts, child: const Text('Retry')),
         ],
       ),
     );
@@ -706,21 +653,16 @@ class _DashboardStat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 11,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: AppColors.white.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: AppColors.white.withValues(alpha: 0.16),
-        ),
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: AppColors.white.withValues(alpha: 0.16)),
       ),
       child: Row(
         children: [
-          Icon(icon, color: AppColors.white, size: 21),
-          const SizedBox(width: 9),
+          Icon(icon, color: AppColors.white, size: 19),
+          const SizedBox(width: 8),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -728,7 +670,7 @@ class _DashboardStat extends StatelessWidget {
                 value,
                 style: const TextStyle(
                   color: AppColors.white,
-                  fontSize: 17,
+                  fontSize: 15,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -803,10 +745,7 @@ class _ExploreCard extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 count == null ? 'Open conversations' : '$count listings',
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
               ),
             ],
           ),
@@ -835,13 +774,9 @@ class _HomeLoadingView extends StatelessWidget {
         SizedBox(height: 14),
         Row(
           children: [
-            Expanded(
-              child: _SkeletonBox(height: 142, borderRadius: 19),
-            ),
+            Expanded(child: _SkeletonBox(height: 142, borderRadius: 19)),
             SizedBox(width: 12),
-            Expanded(
-              child: _SkeletonBox(height: 142, borderRadius: 19),
-            ),
+            Expanded(child: _SkeletonBox(height: 142, borderRadius: 19)),
           ],
         ),
       ],
@@ -877,10 +812,7 @@ class _SkeletonBox extends StatelessWidget {
 }
 
 class _HomeErrorView extends StatelessWidget {
-  const _HomeErrorView({
-    required this.message,
-    required this.onRetry,
-  });
+  const _HomeErrorView({required this.message, required this.onRetry});
 
   final String message;
   final Future<void> Function() onRetry;

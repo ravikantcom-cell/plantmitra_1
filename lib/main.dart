@@ -1,51 +1,51 @@
 // lib/main.dart
-import 'package:flutter/material.dart';
+import 'dart:async';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:plantmitra_1/screens/auth/login_screen.dart';
-import 'package:plantmitra_1/screens/home/home_screen.dart';
-import 'package:plantmitra_1/screens/splash/splash_screen.dart';
+import 'package:flutter/material.dart';
 import 'package:plantmitra_1/screens/add_plant/add_plant_screen.dart';
-import 'package:plantmitra_1/screens/favorites/favorite_screen.dart';
+import 'package:plantmitra_1/screens/auth/login_screen.dart';
 import 'package:plantmitra_1/screens/chat/chat_list_screen.dart';
 import 'package:plantmitra_1/screens/chat/chat_screen.dart';
 import 'package:plantmitra_1/screens/detail/plant_detail_screen.dart';
+import 'package:plantmitra_1/screens/favorites/favorite_screen.dart';
+import 'package:plantmitra_1/screens/home/home_screen.dart';
 import 'package:plantmitra_1/screens/profile/profile_screen.dart';
-import 'package:plantmitra_1/utils/logger.dart';
+import 'package:plantmitra_1/screens/splash/splash_screen.dart';
+import 'package:plantmitra_1/services/notification_service.dart';
 import 'package:plantmitra_1/theme/app_theme.dart';
+import 'package:plantmitra_1/utils/logger.dart';
+
 import 'firebase_options.dart';
 
+StreamSubscription<User?>? _authSubscription;
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Logger.info('🚀 Jarvis Green: Starting app...');
+  Logger.info('Jarvis Green: Starting app...');
 
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    Logger.info('✅ Firebase initialized successfully!');
-    
-    await _setupFirebaseMessaging();
-  } catch (e) {
-    Logger.error('❌ Firebase initialization error: $e');
+    Logger.info('Firebase initialized successfully.');
+
+    _authSubscription = FirebaseAuth.instance.authStateChanges().listen(
+      (user) async {
+        if (user != null) {
+          await NotificationService.instance.initializeForCurrentUser();
+        }
+      },
+      onError: (Object error) {
+        Logger.warning('Authentication listener warning: $error');
+      },
+    );
+  } catch (error) {
+    Logger.error('Firebase initialization error: $error');
   }
 
   runApp(const JarvisGreenApp());
-}
-
-Future<void> _setupFirebaseMessaging() async {
-  try {
-    final messaging = FirebaseMessaging.instance;
-    final settings = await messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-    Logger.info('Notification permission: ${settings.authorizationStatus}');
-  } catch (e) {
-    Logger.warning('Could not setup Firebase Messaging: $e');
-  }
 }
 
 class JarvisGreenApp extends StatelessWidget {
@@ -55,37 +55,51 @@ class JarvisGreenApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: "Jarvis Green",
+      title: 'Jarvis Green',
       theme: AppTheme.lightTheme,
       home: const SplashScreen(),
-      routes: {
-        '/login': (context) => const LoginScreen(),
-        '/home': (context) => const HomeScreen(),
-        '/add_plant': (context) => const AddPlantScreen(),
-        '/favorites': (context) => const FavoriteScreen(),
-        '/chats': (context) => const ChatListScreen(),
-        '/profile': (context) => const ProfileScreen(),
+      routes: <String, WidgetBuilder>{
+        '/login': (_) => const LoginScreen(),
+        '/home': (_) => const HomeScreen(),
+        '/add_plant': (_) => const AddPlantScreen(),
+        '/favorites': (_) => const FavoriteScreen(),
+        '/chats': (_) => const ChatListScreen(),
+        '/profile': (_) => const ProfileScreen(),
       },
       onGenerateRoute: (settings) {
+        final rawArguments = settings.arguments;
+        final arguments = rawArguments is Map
+            ? Map<String, dynamic>.from(rawArguments)
+            : <String, dynamic>{};
+
         if (settings.name == '/chat') {
-          final args = settings.arguments as Map<String, dynamic>;
-          return MaterialPageRoute(
-            builder: (context) => ChatScreen(
-              senderId: args['senderId'],
-              receiverId: args['receiverId'],
-              receiverName: args['receiverName'],
+          return MaterialPageRoute<void>(
+            builder: (_) => ChatScreen(
+              senderId: arguments['senderId']?.toString() ?? '',
+              receiverId: arguments['receiverId']?.toString() ?? '',
+              receiverName:
+                  arguments['receiverName']?.toString() ?? 'Plant Lover',
+              receiverImage: arguments['receiverImage']?.toString(),
+              chatId: arguments['chatId']?.toString(),
+              plantId: arguments['plantId']?.toString(),
+              plantName: arguments['plantName']?.toString(),
+              plantImage: arguments['plantImage']?.toString(),
             ),
           );
         }
+
         if (settings.name == '/plant_detail') {
-          final args = settings.arguments as Map<String, dynamic>;
-          return MaterialPageRoute(
-            builder: (context) => PlantDetailScreen(
-              documentId: args['documentId'],
-              plant: args['plant'],
+          final plant = arguments['plant'];
+          return MaterialPageRoute<void>(
+            builder: (_) => PlantDetailScreen(
+              documentId: arguments['documentId']?.toString() ?? '',
+              plant: plant is Map
+                  ? Map<String, dynamic>.from(plant)
+                  : <String, dynamic>{},
             ),
           );
         }
+
         return null;
       },
     );

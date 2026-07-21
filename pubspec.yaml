@@ -46,26 +46,26 @@ flutter:
   assets:
     # - assets/images/
     # - assets/icons/
-    - assets/data/plant_master.csv
+    - assets/data/
     - assets/logo/  # Add this so your logo is included
 
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/logo/jarvis_green_logo_transparent.png"
+  image_path: "assets/logo/jarvis_green_launcher_icon.png"
   min_sdk_android: 21
-  adaptive_icon_background: "#2E7D32"
-  adaptive_icon_foreground: "assets/logo/jarvis_green_logo_transparent.png"
+  adaptive_icon_background: "#F4FAF4"
+  adaptive_icon_foreground: "assets/logo/jarvis_green_launcher_icon.png"
   remove_alpha_ios: true
   web:
     generate: true
-    image_path: "assets/logo/jarvis_green_logo_transparent.png"
-    background_color: "#2E7D32"
+    image_path: "assets/logo/jarvis_green_launcher_icon.png"
+    background_color: "#F4FAF4"
     theme_color: "#2E7D32"
   windows:
     generate: true
-    image_path: "assets/logo/jarvis_green_logo_transparent.png"
+    image_path: "assets/logo/jarvis_green_launcher_icon.png"
     icon_size: 48
   macos:
     generate: true
-    image_path: "assets/logo/jarvis_green_logo_transparent.png"
+    image_path: "assets/logo/jarvis_green_launcher_icon.png"

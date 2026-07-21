@@ -1,4 +1,6 @@
 // lib/screens/home/all_plants_screen.dart
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:plantmitra_1/services/plant_master_service.dart';
@@ -23,18 +25,22 @@ class AllPlantsScreen extends StatefulWidget {
 
 class _AllPlantsScreenState extends State<AllPlantsScreen> {
   final PlantMasterService _masterService = PlantMasterService.instance;
-  
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _searchDebounce;
+
   String searchText = "";
   String selectedCategory = "All";
   String selectedItemType = "All";
-  
-  final List<String> itemTypes = [
-    "All",
-    "Plant",
-    "Seed",
-    "Cutting",
-    "Sapling",
+  String selectedSort = "Newest";
+
+  static const List<String> sortOptions = [
+    "Newest",
+    "Name A-Z",
+    "Price low-high",
+    "Price high-low",
   ];
+
+  final List<String> itemTypes = ["All", "Plant", "Seed", "Cutting", "Sapling"];
 
   final List<String> categories = const [
     "All",
@@ -95,14 +101,69 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     // Set selected item type from widget
     if (widget.itemType != null) {
       selectedItemType = widget.itemType!;
     }
-    
+
     // Load master plants for reference
     _masterService.loadPlants();
+  }
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 280), () {
+      if (mounted) setState(() => searchText = value.trim().toLowerCase());
+    });
+  }
+
+  void _clearFilters() {
+    _searchDebounce?.cancel();
+    _searchController.clear();
+    setState(() {
+      searchText = "";
+      selectedCategory = "All";
+      selectedItemType = widget.itemType ?? "All";
+      selectedSort = "Newest";
+    });
+  }
+
+  num _priceOf(Map<String, dynamic> plant) {
+    final value = plant["price"];
+    return value is num ? value : num.tryParse(value?.toString() ?? "") ?? 0;
+  }
+
+  void _sortPlants(List<QueryDocumentSnapshot<Map<String, dynamic>>> plants) {
+    plants.sort((first, second) {
+      final a = first.data();
+      final b = second.data();
+      switch (selectedSort) {
+        case "Name A-Z":
+          return (a["name"] ?? "").toString().toLowerCase().compareTo(
+            (b["name"] ?? "").toString().toLowerCase(),
+          );
+        case "Price low-high":
+          return _priceOf(a).compareTo(_priceOf(b));
+        case "Price high-low":
+          return _priceOf(b).compareTo(_priceOf(a));
+        default:
+          final aTime = a["createdAt"] is Timestamp
+              ? (a["createdAt"] as Timestamp).millisecondsSinceEpoch
+              : 0;
+          final bTime = b["createdAt"] is Timestamp
+              ? (b["createdAt"] as Timestamp).millisecondsSinceEpoch
+              : 0;
+          return bTime.compareTo(aTime);
+      }
+    });
   }
 
   // Get master plant name from masterPlantId
@@ -114,30 +175,10 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Query query = FirebaseFirestore.instance
+    final Query<Map<String, dynamic>> query = FirebaseFirestore.instance
         .collection("plants")
-        .where("status", isEqualTo: "Available");
-
-    // Filter by free status
-    if (widget.isFree != null) {
-      query = query.where(
-        "isFree",
-        isEqualTo: widget.isFree,
-      );
-    }
-
-    // Filter by item type
-    if (widget.itemType != null && widget.itemType != "All") {
-      query = query.where(
-        "itemType",
-        isEqualTo: widget.itemType,
-      );
-    }
-
-    query = query.orderBy(
-      "createdAt",
-      descending: true,
-    );
+        .where("status", isEqualTo: "Available")
+        .orderBy("createdAt", descending: true);
 
     return Scaffold(
       appBar: AppBar(
@@ -146,17 +187,26 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
+          PopupMenuButton<String>(
+            tooltip: "Sort plants",
+            initialValue: selectedSort,
+            icon: const Icon(Icons.sort_rounded),
+            onSelected: (value) => setState(() => selectedSort = value),
+            itemBuilder: (_) => sortOptions
+                .map(
+                  (option) =>
+                      PopupMenuItem<String>(value: option, child: Text(option)),
+                )
+                .toList(),
+          ),
           // Clear filters button
-          if (selectedCategory != "All" || searchText.isNotEmpty)
+          if (selectedCategory != "All" ||
+              selectedItemType != (widget.itemType ?? "All") ||
+              searchText.isNotEmpty ||
+              selectedSort != "Newest")
             IconButton(
               icon: const Icon(Icons.clear_all),
-              onPressed: () {
-                setState(() {
-                  selectedCategory = "All";
-                  searchText = "";
-                  selectedItemType = widget.itemType ?? "All";
-                });
-              },
+              onPressed: _clearFilters,
             ),
         ],
       ),
@@ -166,6 +216,7 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
           Padding(
             padding: const EdgeInsets.all(12),
             child: TextField(
+              controller: _searchController,
               decoration: InputDecoration(
                 hintText: "Search plants...",
                 prefixIcon: const Icon(Icons.search),
@@ -173,9 +224,8 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
                     ? IconButton(
                         icon: const Icon(Icons.clear),
                         onPressed: () {
-                          setState(() {
-                            searchText = "";
-                          });
+                          _searchController.clear();
+                          _onSearchChanged("");
                         },
                       )
                     : null,
@@ -190,11 +240,7 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
                   vertical: 12,
                 ),
               ),
-              onChanged: (value) {
-                setState(() {
-                  searchText = value.toLowerCase();
-                });
-              },
+              onChanged: _onSearchChanged,
             ),
           ),
 
@@ -221,7 +267,9 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
                       style: TextStyle(
                         fontSize: 13,
                         color: selected ? Colors.white : Colors.black87,
-                        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                        fontWeight: selected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                       ),
                     ),
                     selected: selected,
@@ -273,7 +321,9 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
                         style: TextStyle(
                           fontSize: 13,
                           color: selected ? Colors.white : Colors.black87,
-                          fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: selected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
                       ),
                       selected: selected,
@@ -303,7 +353,7 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
 
           // PLANTS LIST
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
+            child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
               stream: query.snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -311,15 +361,11 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        CircularProgressIndicator(
-                          color: Colors.green,
-                        ),
+                        CircularProgressIndicator(color: Colors.green),
                         SizedBox(height: 16),
                         Text(
                           "Loading plants...",
-                          style: TextStyle(
-                            color: Colors.grey,
-                          ),
+                          style: TextStyle(color: Colors.grey),
                         ),
                       ],
                     ),
@@ -350,9 +396,7 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
                         Text(
                           snapshot.error.toString(),
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                          ),
+                          style: TextStyle(color: Colors.grey.shade600),
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton.icon(
@@ -369,42 +413,83 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
                   );
                 }
 
-                List<QueryDocumentSnapshot> plants = snapshot.data?.docs ?? [];
+                List<QueryDocumentSnapshot<Map<String, dynamic>>> plants =
+                    List<QueryDocumentSnapshot<Map<String, dynamic>>>.from(
+                      snapshot.data?.docs ?? const [],
+                    );
+
+                if (widget.isFree != null) {
+                  plants = plants
+                      .where((doc) => doc.data()["isFree"] == widget.isFree)
+                      .toList();
+                }
+
+                if (widget.itemType != null && widget.itemType != "All") {
+                  final requiredType = widget.itemType!.toLowerCase();
+                  plants = plants.where((doc) {
+                    return (doc.data()["itemType"] ?? "Plant")
+                            .toString()
+                            .toLowerCase() ==
+                        requiredType;
+                  }).toList();
+                }
 
                 // SEARCH FILTER (Client-side)
                 if (searchText.isNotEmpty) {
                   plants = plants.where((doc) {
-                    final plant = doc.data() as Map<String, dynamic>;
+                    final plant = doc.data();
                     final name = (plant["name"] ?? "").toString().toLowerCase();
-                    final scientific = (plant["scientificName"] ?? "").toString().toLowerCase();
-                    final masterPlantId = (plant["masterPlantId"] ?? "").toString().toLowerCase();
-                    final masterName = _getMasterPlantName(masterPlantId).toLowerCase();
-                    
+                    final scientific = (plant["scientificName"] ?? "")
+                        .toString()
+                        .toLowerCase();
+                    final location = (plant["location"] ?? "")
+                        .toString()
+                        .toLowerCase();
+                    final category = (plant["category"] ?? "")
+                        .toString()
+                        .toLowerCase();
+                    final masterPlantId = (plant["masterPlantId"] ?? "")
+                        .toString();
+                    final masterName = _getMasterPlantName(
+                      masterPlantId,
+                    ).toLowerCase();
+
                     return name.contains(searchText) ||
                         scientific.contains(searchText) ||
-                        masterName.contains(searchText);
+                        masterName.contains(searchText) ||
+                        location.contains(searchText) ||
+                        category.contains(searchText);
                   }).toList();
                 }
 
                 // CATEGORY FILTER (Client-side)
                 if (selectedCategory != "All") {
                   plants = plants.where((doc) {
-                    final plant = doc.data() as Map<String, dynamic>;
-                    final category = (plant["category"] ?? "").toString().toLowerCase();
-                    final subCategory = (plant["subCategory"] ?? "").toString().toLowerCase();
+                    final plant = doc.data();
+                    final category = (plant["category"] ?? "")
+                        .toString()
+                        .toLowerCase();
+                    final subCategory = (plant["subCategory"] ?? "")
+                        .toString()
+                        .toLowerCase();
                     final filter = selectedCategory.toLowerCase();
-                    return category.contains(filter) || subCategory.contains(filter);
+                    return category.contains(filter) ||
+                        subCategory.contains(filter);
                   }).toList();
                 }
 
                 // ITEM TYPE FILTER (Client-side) - Only if not passed from parent
                 if (widget.itemType == null && selectedItemType != "All") {
                   plants = plants.where((doc) {
-                    final plant = doc.data() as Map<String, dynamic>;
-                    final itemType = (plant["itemType"] ?? "Plant").toString().toLowerCase();
+                    final plant = doc.data();
+                    final itemType = (plant["itemType"] ?? "Plant")
+                        .toString()
+                        .toLowerCase();
                     return itemType == selectedItemType.toLowerCase();
                   }).toList();
                 }
+
+                _sortPlants(plants);
 
                 // EMPTY STATE
                 if (plants.isEmpty) {
@@ -431,21 +516,13 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
                           searchText.isNotEmpty || selectedCategory != "All"
                               ? "Try adjusting your search or filters"
                               : "Check back later for new plants",
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                          ),
+                          style: TextStyle(color: Colors.grey.shade600),
                         ),
                         if (searchText.isNotEmpty || selectedCategory != "All")
                           Padding(
                             padding: const EdgeInsets.only(top: 16),
                             child: ElevatedButton.icon(
-                              onPressed: () {
-                                setState(() {
-                                  searchText = "";
-                                  selectedCategory = "All";
-                                  selectedItemType = widget.itemType ?? "All";
-                                });
-                              },
+                              onPressed: _clearFilters,
                               icon: const Icon(Icons.clear_all),
                               label: const Text("Clear Filters"),
                               style: ElevatedButton.styleFrom(
@@ -465,7 +542,7 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
                   itemCount: plants.length,
                   itemBuilder: (context, index) {
                     final plantDoc = plants[index];
-                    final plant = plantDoc.data() as Map<String, dynamic>;
+                    final plant = plantDoc.data();
 
                     // Get master plant name
                     final masterPlantId = plant["masterPlantId"] ?? "";
@@ -503,20 +580,22 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
                                   width: 95,
                                   height: 95,
                                   fit: BoxFit.cover,
-                                  loadingBuilder: (context, child, loadingProgress) {
-                                    if (loadingProgress == null) return child;
-                                    return Container(
-                                      width: 95,
-                                      height: 95,
-                                      color: Colors.green.shade50,
-                                      child: const Center(
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.green,
-                                        ),
-                                      ),
-                                    );
-                                  },
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
+                                        if (loadingProgress == null)
+                                          return child;
+                                        return Container(
+                                          width: 95,
+                                          height: 95,
+                                          color: Colors.green.shade50,
+                                          child: const Center(
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.green,
+                                            ),
+                                          ),
+                                        );
+                                      },
                                   errorBuilder: (_, __, ___) {
                                     return Container(
                                       width: 95,
@@ -566,7 +645,9 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
                                     const SizedBox(height: 4),
 
                                     // Scientific Name
-                                    if ((plant["scientificName"] ?? "").toString().isNotEmpty)
+                                    if ((plant["scientificName"] ?? "")
+                                        .toString()
+                                        .isNotEmpty)
                                       Text(
                                         plant["scientificName"],
                                         style: TextStyle(
@@ -586,7 +667,9 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
                                       runSpacing: 6,
                                       children: [
                                         // Category Badge
-                                        if ((plant["category"] ?? "").toString().isNotEmpty)
+                                        if ((plant["category"] ?? "")
+                                            .toString()
+                                            .isNotEmpty)
                                           Container(
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 8,
@@ -594,7 +677,8 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
                                             ),
                                             decoration: BoxDecoration(
                                               color: Colors.green.shade50,
-                                              borderRadius: BorderRadius.circular(12),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
                                             ),
                                             child: Text(
                                               plant["category"] ?? "",
@@ -605,9 +689,11 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
                                               ),
                                             ),
                                           ),
-                                        
+
                                         // Sub Category Badge
-                                        if ((plant["subCategory"] ?? "").toString().isNotEmpty)
+                                        if ((plant["subCategory"] ?? "")
+                                            .toString()
+                                            .isNotEmpty)
                                           Container(
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 8,
@@ -615,7 +701,8 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
                                             ),
                                             decoration: BoxDecoration(
                                               color: Colors.purple.shade50,
-                                              borderRadius: BorderRadius.circular(12),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
                                             ),
                                             child: Text(
                                               plant["subCategory"] ?? "",
@@ -626,7 +713,7 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
                                               ),
                                             ),
                                           ),
-                                        
+
                                         // Item Type Badge
                                         Container(
                                           padding: const EdgeInsets.symmetric(
@@ -635,7 +722,9 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
                                           ),
                                           decoration: BoxDecoration(
                                             color: Colors.blue.shade50,
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                           ),
                                           child: Text(
                                             plant["itemType"] ?? "Plant",
@@ -662,7 +751,8 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
                                         const SizedBox(width: 4),
                                         Expanded(
                                           child: Text(
-                                            plant["location"] ?? "Location not specified",
+                                            plant["location"] ??
+                                                "Location not specified",
                                             overflow: TextOverflow.ellipsis,
                                             style: TextStyle(
                                               fontSize: 12,
@@ -687,7 +777,9 @@ class _AllPlantsScreenState extends State<AllPlantsScreen> {
                                             color: (plant["isFree"] ?? false)
                                                 ? Colors.green
                                                 : Colors.orange,
-                                            borderRadius: BorderRadius.circular(20),
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
                                           ),
                                           child: Text(
                                             (plant["isFree"] ?? false)

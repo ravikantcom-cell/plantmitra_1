@@ -3,7 +3,7 @@
     "short_name": "plantmitra",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#2E7D32",
+    "background_color": "#F4FAF4",
     "theme_color": "#2E7D32",
     "description": "A new Flutter project.",
     "orientation": "portrait-primary",

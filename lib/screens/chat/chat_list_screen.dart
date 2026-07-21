@@ -1,10 +1,14 @@
-import 'dart:async';
-
+// lib/screens/chat/chat_list_screen.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:plantmitra_1/services/chat_service.dart';
 import 'package:plantmitra_1/screens/chat/chat_screen.dart';
-import 'package:plantmitra_1/screens/auth/login_screen.dart';
+import 'package:plantmitra_1/services/chat_service.dart';
+import 'package:plantmitra_1/services/public_profile_service.dart';
+import 'package:plantmitra_1/utils/logger.dart';
+
+const Color _darkGreen = Color(0xFF174D2B);
+const Color _green = Color(0xFF2E7D32);
+const Color _secondaryText = Color(0xFF69806E);
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -15,452 +19,356 @@ class ChatListScreen extends StatefulWidget {
 
 class _ChatListScreenState extends State<ChatListScreen> {
   final ChatService _chatService = ChatService();
-  bool _useFallbackQuery = false;
-  bool _isInitialized = false;
-  StreamSubscription? _subscription;
-  
-  // Cache for user names
-  final Map<String, String> _userNameCache = {};
+  final PublicProfileService _publicProfiles = PublicProfileService.instance;
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
 
   @override
   void initState() {
     super.initState();
-    _checkIndexStatus();
+    _publicProfiles.ensureCurrentUserProfile();
   }
 
   @override
   void dispose() {
-    _subscription?.cancel();
+    _searchController.dispose();
     super.dispose();
   }
 
-  Future<void> _checkIndexStatus() async {
-    final userId = _chatService.getCurrentUserId();
-    if (userId == null) return;
-
-    try {
-      final query = _chatService.getUserChatRooms(userId);
-      
-      _subscription = query.listen((_) {
-        if (mounted && !_isInitialized) {
-          setState(() {
-            _useFallbackQuery = false;
-            _isInitialized = true;
-          });
-        }
-        _subscription?.cancel();
-      }, onError: (error) {
-        if (mounted && !_isInitialized) {
-          setState(() {
-            _useFallbackQuery = true;
-            _isInitialized = true;
-          });
-        }
-        _subscription?.cancel();
-      });
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _useFallbackQuery = true;
-          _isInitialized = true;
-        });
-      }
-    }
+  List<Map<String, dynamic>> _sortedChats(List<Map<String, dynamic>> source) {
+    final chats = source.toList();
+    chats.sort((a, b) {
+      final aValue = a['lastMessageTime'];
+      final bValue = b['lastMessageTime'];
+      final aTime = aValue is Timestamp ? aValue.millisecondsSinceEpoch : 0;
+      final bTime = bValue is Timestamp ? bValue.millisecondsSinceEpoch : 0;
+      return bTime.compareTo(aTime);
+    });
+    return chats;
   }
 
-  // Get user name with caching
-  Future<String> _getUserName(String userId) async {
-    if (_userNameCache.containsKey(userId)) {
-      return _userNameCache[userId]!;
+  String _otherUserId(Map<String, dynamic> chat, String currentUserId) {
+    final participants = chat['participants'];
+    if (participants is! List) return '';
+    for (final participant in participants) {
+      final id = participant?.toString() ?? '';
+      if (id.isNotEmpty && id != currentUserId) return id;
     }
-
-    try {
-      final name = await _chatService.getUserDisplayName(userId);
-      _userNameCache[userId] = name;
-      return name;
-    } catch (e) {
-      print('Error getting user name: $e');
-      final fallback = userId.length > 8 ? userId.substring(0, 8) : userId;
-      _userNameCache[userId] = fallback;
-      return fallback;
-    }
+    return '';
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final userId = _chatService.getCurrentUserId();
-
-    if (userId == null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Chats'),
-          backgroundColor: Colors.green,
-          foregroundColor: Colors.white,
-          elevation: 0,
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.lock_outline,
-                size: 64,
-                color: Colors.grey,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Please login to view chats',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Login'),
-              ),
-            ],
-          ),
-        ),
-      );
+  String _displayName(Map<String, dynamic> chat, String otherUserId) {
+    final names = chat['participantsNames'];
+    if (names is Map) {
+      final name = names[otherUserId]?.toString().trim() ?? '';
+      if (name.isNotEmpty) return name;
     }
+    return otherUserId.length > 8 ? otherUserId.substring(0, 8) : otherUserId;
+  }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Chats'),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              _showSearchDialog(context);
-            },
-          ),
-        ],
-      ),
-      body: StreamBuilder<List<Map<String, dynamic>>>(
-        stream: _useFallbackQuery 
-            ? _chatService.getUserChatRoomsWithoutOrder(userId)
-            : _chatService.getUserChatRooms(userId),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    color: Colors.green,
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Loading chats...',
-                    style: TextStyle(
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
+  String _chatPreview(Map<String, dynamic> chat) {
+    final plantName = chat['plantName']?.toString().trim() ?? '';
+    final message = chat['lastMessage']?.toString().trim() ?? '';
+    if (plantName.isNotEmpty && message.isNotEmpty) {
+      return '$plantName · $message';
+    }
+    if (plantName.isNotEmpty) return plantName;
+    return message.isNotEmpty ? message : 'No messages yet';
+  }
 
-          if (snapshot.hasError) {
-            final errorMsg = snapshot.error.toString();
-            final bool isIndexError = errorMsg.contains('failed-precondition') || 
-                                     errorMsg.contains('index');
+  List<Map<String, dynamic>> _visibleChats(
+    List<Map<String, dynamic>> chats,
+    String currentUserId,
+  ) {
+    if (_query.isEmpty) return chats;
+    return chats.where((chat) {
+      final otherId = _otherUserId(chat, currentUserId);
+      final name = _displayName(chat, otherId).toLowerCase();
+      final lastMessage = chat['lastMessage']?.toString().toLowerCase() ?? '';
+      return name.contains(_query) || lastMessage.contains(_query);
+    }).toList();
+  }
 
-            if (isIndexError && !_useFallbackQuery) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) {
-                  setState(() {
-                    _useFallbackQuery = true;
-                  });
-                }
-              });
-              
-              return const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      color: Colors.green,
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      'Switching to fallback mode...',
-                      style: TextStyle(
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      color: isIndexError ? Colors.orange : Colors.red,
-                      size: 64,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      isIndexError ? 'Index Required' : 'Error loading chats',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade700,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      isIndexError 
-                          ? 'Please wait while the database index is being created.\nThis may take a few minutes.'
-                          : snapshot.error.toString(),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    if (isIndexError) ...[
-                      const Text(
-                        '⏳ Index is building. Please wait...',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.orange,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        setState(() {
-                          _useFallbackQuery = !_useFallbackQuery;
-                        });
-                      },
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Retry'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.chat_bubble_outline,
-                    size: 64,
-                    color: Colors.grey,
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'No conversations yet',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Start chatting with sellers',
-                    style: TextStyle(
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          final chats = snapshot.data!;
-          
-          if (_useFallbackQuery) {
-            chats.sort((a, b) {
-              final timeA = a['lastMessageTime'] as Timestamp?;
-              final timeB = b['lastMessageTime'] as Timestamp?;
-              if (timeA == null && timeB == null) return 0;
-              if (timeA == null) return 1;
-              if (timeB == null) return -1;
-              return timeB.compareTo(timeA);
-            });
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: chats.length,
-            itemBuilder: (context, index) {
-              final chat = chats[index];
-              final participants = chat['participants'] as List;
-              final otherUser = participants.firstWhere(
-                (p) => p != userId,
-                orElse: () => '',
-              );
-              
-              if (otherUser.isEmpty) return const SizedBox.shrink();
-
-              final lastMessage = chat['lastMessage'] ?? 'No messages yet';
-              final lastMessageTime = chat['lastMessageTime'];
-              final lastMessageSender = chat['lastMessageSender'];
-              final isFromMe = lastMessageSender == userId;
-              final chatId = chat['id'] ?? '';
-
-              // Try to get name from chat document first (faster)
-              final participantsNames = chat['participantsNames'] as Map?;
-              String cachedName = participantsNames?[otherUser] ?? '';
-
-              // If name is in chat document, use it directly
-              if (cachedName.isNotEmpty) {
-                return _buildChatItem(
-                  chatId: chatId,
-                  userId: userId,
-                  otherUserId: otherUser,
-                  displayName: cachedName,
-                  lastMessage: lastMessage,
-                  lastMessageTime: lastMessageTime,
-                  isFromMe: isFromMe,
-                );
-              }
-
-              // Otherwise fetch from users collection
-              return FutureBuilder<String>(
-                future: _getUserName(otherUser),
-                builder: (context, nameSnapshot) {
-                  final displayName = nameSnapshot.data ?? otherUser.substring(0, 8);
-
-                  return _buildChatItem(
-                    chatId: chatId,
-                    userId: userId,
-                    otherUserId: otherUser,
-                    displayName: displayName,
-                    lastMessage: lastMessage,
-                    lastMessageTime: lastMessageTime,
-                    isFromMe: isFromMe,
-                  );
-                },
-              );
-            },
-          );
-        },
+  Future<void> _openChat({
+    required String chatId,
+    required String currentUserId,
+    required String otherUserId,
+    required String displayName,
+    String? plantId,
+    String? plantName,
+    String? plantImage,
+  }) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          senderId: currentUserId,
+          receiverId: otherUserId,
+          receiverName: displayName,
+          chatId: chatId,
+          plantId: plantId,
+          plantName: plantName,
+          plantImage: plantImage,
+        ),
       ),
     );
   }
 
-  Widget _buildChatItem({
-    required String chatId,
-    required String userId,
-    required String otherUserId,
-    required String displayName,
-    required String lastMessage,
-    required dynamic lastMessageTime,
-    required bool isFromMe,
-  }) {
-    return FutureBuilder<int>(
-      future: _getUnreadCount(chatId, userId),
-      builder: (context, unreadSnapshot) {
-        final unreadCount = unreadSnapshot.data ?? 0;
+  String _formatTime(dynamic timestamp) {
+    if (timestamp is! Timestamp) return '';
+    final date = timestamp.toDate();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final messageDay = DateTime(date.year, date.month, date.day);
+    final days = today.difference(messageDay).inDays;
+    if (days == 0) {
+      final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
+      final minute = date.minute.toString().padLeft(2, '0');
+      return '$hour:$minute ${date.hour >= 12 ? 'PM' : 'AM'}';
+    }
+    if (days == 1) return 'Yesterday';
+    if (days < 7) {
+      const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      return weekdays[date.weekday - 1];
+    }
+    return '${date.day}/${date.month}/${date.year}';
+  }
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          elevation: 2,
+  @override
+  Widget build(BuildContext context) {
+    final currentUserId = _chatService.getCurrentUserId();
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F8F4),
+      appBar: AppBar(
+        title: const Text('Chats'),
+        backgroundColor: Colors.white,
+        foregroundColor: _darkGreen,
+        elevation: 0,
+      ),
+      body: currentUserId == null
+          ? const _SignedOutView()
+          : StreamBuilder<List<Map<String, dynamic>>>(
+              // Local sorting avoids a composite Firestore index requirement.
+              stream: _chatService.getUserChatRoomsWithoutOrder(currentUserId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting &&
+                    !snapshot.hasData) {
+                  return const _LoadingView();
+                }
+                if (snapshot.hasError) {
+                  Logger.error('Chat list stream error: ${snapshot.error}');
+                  return const _ErrorView();
+                }
+                final allChats = _sortedChats(snapshot.data ?? const []);
+                if (allChats.isEmpty) return const _EmptyChatsView();
+                final visibleChats = _visibleChats(allChats, currentUserId);
+
+                return CustomScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+                      sliver: SliverToBoxAdapter(
+                        child: _ChatHeaderCard(count: allChats.length),
+                      ),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
+                      sliver: SliverToBoxAdapter(child: _buildSearch()),
+                    ),
+                    if (visibleChats.isEmpty)
+                      const SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: _NoResultsView(),
+                      )
+                    else
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
+                        sliver: SliverList.separated(
+                          itemCount: visibleChats.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 10),
+                          itemBuilder: (context, index) {
+                            final chat = visibleChats[index];
+                            final otherId = _otherUserId(chat, currentUserId);
+                            if (otherId.isEmpty) return const SizedBox.shrink();
+                            final fallbackName = _displayName(chat, otherId);
+                            return FutureBuilder<String>(
+                              future: _publicProfiles.getDisplayName(
+                                otherId,
+                                fallback: fallbackName,
+                              ),
+                              initialData: fallbackName,
+                              builder: (context, nameSnapshot) {
+                                final name = nameSnapshot.data ?? fallbackName;
+                                return _ChatTile(
+                                  chatId: chat['id']?.toString() ?? '',
+                                  currentUserId: currentUserId,
+                                  displayName: name,
+                                  lastMessage: _chatPreview(chat),
+                                  time: _formatTime(chat['lastMessageTime']),
+                                  sentByMe:
+                                      chat['lastMessageSender'] ==
+                                      currentUserId,
+                                  firestore: _chatService.firestore,
+                                  onTap: () => _openChat(
+                                    chatId: chat['id']?.toString() ?? '',
+                                    currentUserId: currentUserId,
+                                    otherUserId: otherId,
+                                    displayName: name,
+                                    plantId: chat['plantId']?.toString(),
+                                    plantName: chat['plantName']?.toString(),
+                                    plantImage: chat['plantImage']?.toString(),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+    );
+  }
+
+  Widget _buildSearch() {
+    return TextField(
+      controller: _searchController,
+      onChanged: (value) => setState(() => _query = value.trim().toLowerCase()),
+      decoration: InputDecoration(
+        hintText: 'Search conversations',
+        prefixIcon: const Icon(Icons.search_rounded, color: _green),
+        suffixIcon: _query.isEmpty
+            ? null
+            : IconButton(
+                onPressed: () {
+                  _searchController.clear();
+                  setState(() => _query = '');
+                },
+                icon: const Icon(Icons.close_rounded),
+              ),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xFFDDE7DE)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: _green, width: 1.6),
+        ),
+      ),
+    );
+  }
+}
+
+class _ChatTile extends StatelessWidget {
+  const _ChatTile({
+    required this.chatId,
+    required this.currentUserId,
+    required this.displayName,
+    required this.lastMessage,
+    required this.time,
+    required this.sentByMe,
+    required this.firestore,
+    required this.onTap,
+  });
+
+  final String chatId;
+  final String currentUserId;
+  final String displayName;
+  final String lastMessage;
+  final String time;
+  final bool sentByMe;
+  final FirebaseFirestore firestore;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    if (chatId.isEmpty) return const SizedBox.shrink();
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: firestore
+          .collection('chats')
+          .doc(chatId)
+          .collection('messages')
+          .where('read', isEqualTo: false)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final unread =
+            snapshot.data?.docs.where((document) {
+              return document.data()['sender'] != currentUserId;
+            }).length ??
+            0;
+        return Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(19),
           child: InkWell(
-            borderRadius: BorderRadius.circular(15),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ChatScreen(
-                    senderId: userId,
-                    receiverId: otherUserId,
-                    receiverName: displayName,
-                  ),
-                ),
-              );
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(12),
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(19),
+            child: Container(
+              padding: const EdgeInsets.all(13),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(19),
+                border: Border.all(color: const Color(0xFFE0E9E1)),
+              ),
               child: Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: Colors.green.shade100,
                     radius: 28,
+                    backgroundColor: const Color(0xFFE6F4E8),
                     child: Text(
-                      displayName.isNotEmpty 
-                          ? displayName.substring(0, 1).toUpperCase() 
-                          : '?',
-                      style: TextStyle(
-                        color: Colors.green.shade800,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
+                      displayName.isEmpty ? '?' : displayName[0].toUpperCase(),
+                      style: const TextStyle(
+                        color: _green,
+                        fontSize: 19,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
                   ),
                   const SizedBox(width: 12),
-
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           displayName,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: _darkGreen,
+                            fontSize: 16,
+                            fontWeight: unread > 0
+                                ? FontWeight.w900
+                                : FontWeight.w700,
+                          ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 5),
                         Row(
                           children: [
-                            if (isFromMe)
+                            if (sentByMe) ...[
                               const Icon(
-                                Icons.check,
-                                size: 14,
-                                color: Colors.grey,
+                                Icons.done_rounded,
+                                size: 15,
+                                color: _secondaryText,
                               ),
-                            if (isFromMe) const SizedBox(width: 4),
+                              const SizedBox(width: 3),
+                            ],
                             Expanded(
                               child: Text(
                                 lastMessage,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  color: unreadCount > 0 
-                                      ? Colors.black 
-                                      : Colors.grey.shade600,
-                                  fontWeight: unreadCount > 0 
-                                      ? FontWeight.bold 
-                                      : FontWeight.normal,
+                                  color: unread > 0
+                                      ? const Color(0xFF334638)
+                                      : _secondaryText,
+                                  fontSize: 13,
+                                  fontWeight: unread > 0
+                                      ? FontWeight.w700
+                                      : FontWeight.w400,
                                 ),
                               ),
                             ),
@@ -469,38 +377,44 @@ class _ChatListScreenState extends State<ChatListScreen> {
                       ],
                     ),
                   ),
-
+                  const SizedBox(width: 8),
                   Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        _formatTimestamp(lastMessageTime),
+                        time,
                         style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade500,
+                          color: unread > 0 ? _green : _secondaryText,
+                          fontSize: 10,
+                          fontWeight: unread > 0
+                              ? FontWeight.w700
+                              : FontWeight.w400,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      if (unreadCount > 0)
+                      const SizedBox(height: 8),
+                      if (unread > 0)
                         Container(
+                          constraints: const BoxConstraints(minWidth: 22),
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+                            horizontal: 6,
+                            vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.green,
+                            color: _green,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            unreadCount > 99 ? '99+' : unreadCount.toString(),
+                            unread > 99 ? '99+' : '$unread',
+                            textAlign: TextAlign.center,
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 10,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
-                        ),
+                        )
+                      else
+                        const SizedBox(height: 20),
                     ],
                   ),
                 ],
@@ -511,93 +425,140 @@ class _ChatListScreenState extends State<ChatListScreen> {
       },
     );
   }
+}
 
-  Future<int> _getUnreadCount(String chatId, String userId) async {
-    try {
-      final snapshot = await _chatService
-          .firestore
-          .collection('chats')
-          .doc(chatId)
-          .collection('messages')
-          .where('sender', isNotEqualTo: userId)
-          .where('read', isEqualTo: false)
-          .count()
-          .get();
-      return snapshot.count ?? 0;
-    } catch (e) {
-      return 0;
-    }
-  }
-
-  String _formatTimestamp(dynamic timestamp) {
-    if (timestamp == null) return '';
-    try {
-      DateTime date;
-      if (timestamp is Timestamp) {
-        date = timestamp.toDate();
-      } else if (timestamp is DateTime) {
-        date = timestamp;
-      } else {
-        return '';
-      }
-      
-      final now = DateTime.now();
-      final difference = now.difference(date);
-      
-      if (difference.inDays > 7) {
-        return '${date.day}/${date.month}/${date.year}';
-      } else if (difference.inDays > 0) {
-        return '${difference.inDays}d ago';
-      } else if (difference.inHours > 0) {
-        return '${difference.inHours}h ago';
-      } else if (difference.inMinutes > 0) {
-        return '${difference.inMinutes}m ago';
-      } else {
-        return 'Just now';
-      }
-    } catch (e) {
-      return '';
-    }
-  }
-
-  void _showSearchDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Search Chats'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              decoration: InputDecoration(
-                hintText: 'Search by name...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+class _ChatHeaderCard extends StatelessWidget {
+  const _ChatHeaderCard({required this.count});
+  final int count;
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
+        colors: [_darkGreen, _green],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      borderRadius: BorderRadius.circular(22),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.forum_rounded, color: Colors.white, size: 35),
+        const SizedBox(width: 13),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Plant conversations',
+                style: TextStyle(color: Color(0xD9FFFFFF), fontSize: 12),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '$count ${count == 1 ? 'conversation' : 'conversations'}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 19,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
-              onChanged: (value) {
-                // Implement search logic
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.green,
+        ),
+      ],
+    ),
+  );
+}
+
+class _LoadingView extends StatelessWidget {
+  const _LoadingView();
+  @override
+  Widget build(BuildContext context) =>
+      const Center(child: CircularProgressIndicator(color: _green));
+}
+
+class _EmptyChatsView extends StatelessWidget {
+  const _EmptyChatsView();
+  @override
+  Widget build(BuildContext context) => const Center(
+    child: Padding(
+      padding: EdgeInsets.all(30),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.chat_bubble_outline_rounded, color: _green, size: 72),
+          SizedBox(height: 16),
+          Text(
+            'No conversations yet',
+            style: TextStyle(
+              color: _darkGreen,
+              fontSize: 21,
+              fontWeight: FontWeight.w800,
             ),
-            child: const Text('Search'),
+          ),
+          SizedBox(height: 7),
+          Text(
+            'Open a plant listing and contact its owner to start chatting.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: _secondaryText),
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
+
+class _NoResultsView extends StatelessWidget {
+  const _NoResultsView();
+  @override
+  Widget build(BuildContext context) => const Center(
+    child: Text(
+      'No matching conversations found.',
+      style: TextStyle(color: _secondaryText),
+    ),
+  );
+}
+
+class _ErrorView extends StatelessWidget {
+  const _ErrorView();
+  @override
+  Widget build(BuildContext context) => const Center(
+    child: Padding(
+      padding: EdgeInsets.all(28),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.cloud_off_rounded, color: Colors.red, size: 56),
+          SizedBox(height: 13),
+          Text(
+            'Could not load chats',
+            style: TextStyle(
+              color: _darkGreen,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          SizedBox(height: 7),
+          Text(
+            'Please check your connection and Firestore permissions.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: _secondaryText),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _SignedOutView extends StatelessWidget {
+  const _SignedOutView();
+  @override
+  Widget build(BuildContext context) => Center(
+    child: FilledButton(
+      onPressed: () => Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil('/login', (route) => false),
+      child: const Text('Sign in to view chats'),
+    ),
+  );
 }

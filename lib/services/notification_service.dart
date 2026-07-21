@@ -1,4 +1,6 @@
 // lib/services/notification_service.dart
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -36,24 +38,26 @@ class NotificationPreferences {
   }
 
   Map<String, dynamic> toMap() => {
-        'enabled': enabled,
-        'chatMessages': chatMessages,
-        'listingActivity': listingActivity,
-        'nearbyPlants': nearbyPlants,
-        'marketing': marketing,
-      };
+    'enabled': enabled,
+    'chatMessages': chatMessages,
+    'listingActivity': listingActivity,
+    'nearbyPlants': nearbyPlants,
+    'marketing': marketing,
+  };
 
   factory NotificationPreferences.fromMap(Map<String, dynamic>? map) {
     if (map == null) return const NotificationPreferences();
     return NotificationPreferences(
       enabled: map['enabled'] is bool ? map['enabled'] as bool : true,
-      chatMessages:
-          map['chatMessages'] is bool ? map['chatMessages'] as bool : true,
+      chatMessages: map['chatMessages'] is bool
+          ? map['chatMessages'] as bool
+          : true,
       listingActivity: map['listingActivity'] is bool
           ? map['listingActivity'] as bool
           : true,
-      nearbyPlants:
-          map['nearbyPlants'] is bool ? map['nearbyPlants'] as bool : false,
+      nearbyPlants: map['nearbyPlants'] is bool
+          ? map['nearbyPlants'] as bool
+          : false,
       marketing: map['marketing'] is bool ? map['marketing'] as bool : false,
     );
   }
@@ -66,6 +70,8 @@ class NotificationService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  StreamSubscription<String>? _tokenRefreshSubscription;
+  String? _initializedUid;
 
   String? get _uid => _auth.currentUser?.uid;
 
@@ -94,13 +100,28 @@ class NotificationService {
       final preferences = await loadPreferences();
       await _messaging.setAutoInitEnabled(preferences.enabled);
       if (preferences.enabled) {
-        await requestPermission();
-        await _saveToken();
+        final settings = await requestPermission();
+        if (settings.authorizationStatus == AuthorizationStatus.authorized ||
+            settings.authorizationStatus == AuthorizationStatus.provisional) {
+          await _saveToken();
+        }
+      } else {
+        await _removeStoredToken(uid);
       }
       await _syncTopics(preferences);
-      _messaging.onTokenRefresh.listen((token) async {
-        await _storeToken(uid, token);
-      });
+      if (_initializedUid != uid || _tokenRefreshSubscription == null) {
+        await _tokenRefreshSubscription?.cancel();
+        _initializedUid = uid;
+        _tokenRefreshSubscription = _messaging.onTokenRefresh.listen(
+          (token) async {
+            final currentUid = _uid;
+            if (currentUid == uid) await _storeToken(uid, token);
+          },
+          onError: (Object error) {
+            Logger.warning('FCM token refresh warning: $error');
+          },
+        );
+      }
     } catch (error) {
       Logger.warning('Notification initialization warning: $error');
     }
@@ -116,8 +137,13 @@ class NotificationService {
 
     await _messaging.setAutoInitEnabled(preferences.enabled);
     if (preferences.enabled) {
-      await requestPermission();
-      await _saveToken();
+      final settings = await requestPermission();
+      if (settings.authorizationStatus == AuthorizationStatus.authorized ||
+          settings.authorizationStatus == AuthorizationStatus.provisional) {
+        await _saveToken();
+      }
+    } else {
+      await _removeStoredToken(uid);
     }
     await _syncTopics(preferences);
   }
@@ -132,6 +158,13 @@ class NotificationService {
   Future<void> _storeToken(String uid, String token) async {
     await _firestore.collection('users').doc(uid).set({
       'fcmToken': token,
+      'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> _removeStoredToken(String uid) async {
+    await _firestore.collection('users').doc(uid).set({
+      'fcmToken': FieldValue.delete(),
       'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }

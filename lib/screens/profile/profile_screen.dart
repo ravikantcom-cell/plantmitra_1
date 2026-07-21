@@ -3,12 +3,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:plantmitra_1/screens/admin/upload_master_plants_screen.dart';
+import 'package:plantmitra_1/screens/about/about_screen.dart';
 import 'package:plantmitra_1/screens/add_plant/add_plant_screen.dart';
 import 'package:plantmitra_1/screens/chat/chat_list_screen.dart';
 import 'package:plantmitra_1/screens/favorites/favorite_screen.dart';
 import 'package:plantmitra_1/screens/my_plants/my_plants_screen.dart';
 import 'package:plantmitra_1/screens/settings/notification_settings_screen.dart';
 import 'package:plantmitra_1/screens/settings/settings_screen.dart';
+import 'package:plantmitra_1/services/public_profile_service.dart';
 import 'package:plantmitra_1/utils/logger.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -34,12 +37,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _user = _auth.currentUser;
+    PublicProfileService.instance.ensureCurrentUserProfile();
   }
 
   Future<void> _openScreen(Widget screen) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => screen),
-    );
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
   }
 
   Future<void> _confirmLogout() async {
@@ -98,14 +100,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = _user;
     if (user == null || _isUpdatingProfile) return;
 
-    final controller = TextEditingController(text: user.displayName ?? '');
+    var editedName = user.displayName ?? '';
     final newName = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.person_outline_rounded, color: _green),
         title: const Text('Edit profile'),
-        content: TextField(
-          controller: controller,
+        content: TextFormField(
+          initialValue: editedName,
           autofocus: true,
           textCapitalization: TextCapitalization.words,
           textInputAction: TextInputAction.done,
@@ -114,11 +116,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             prefixIcon: const Icon(Icons.badge_outlined, color: _green),
             filled: true,
             fillColor: const Color(0xFFF7FAF7),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
           ),
-          onSubmitted: (value) => Navigator.pop(dialogContext, value.trim()),
+          onChanged: (value) => editedName = value,
+          onFieldSubmitted: (value) =>
+              Navigator.pop(dialogContext, value.trim()),
         ),
         actions: [
           TextButton(
@@ -126,13 +128,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, controller.text.trim()),
+            onPressed: () => Navigator.pop(dialogContext, editedName.trim()),
             child: const Text('Save'),
           ),
         ],
       ),
     );
-    controller.dispose();
 
     if (newName == null || newName.trim().length < 2) {
       if (newName != null && mounted) {
@@ -156,6 +157,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
       await user.reload();
+      await PublicProfileService.instance.ensureCurrentUserProfile();
 
       if (!mounted) return;
       setState(() => _user = _auth.currentUser);
@@ -163,15 +165,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (error) {
       Logger.error('Profile update failed: $error');
       if (mounted) {
-        _showMessage('Could not update your profile. Please try again.', isError: true);
+        _showMessage(
+          'Could not update your profile. Please try again.',
+          isError: true,
+        );
       }
     } finally {
       if (mounted) setState(() => _isUpdatingProfile = false);
     }
-  }
-
-  void _showComingSoon(String feature) {
-    _showMessage('$feature is coming soon.');
   }
 
   void _showMessage(String message, {bool isError = false}) {
@@ -190,6 +191,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final user = _user;
     if (user == null) return const _SignedOutProfile();
+    final isAdmin =
+        user.email?.trim().toLowerCase() == 'ravikant.com@gmail.com';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F8F4),
@@ -275,10 +278,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           icon: Icons.info_outline_rounded,
                           title: 'About Jarvis Green',
                           subtitle: 'Version 1.0.0',
-                          onTap: () => _showComingSoon('About page'),
+                          onTap: () => _openScreen(const AboutScreen()),
                         ),
                       ],
                     ),
+                    if (isAdmin) ...[
+                      const SizedBox(height: 18),
+                      const _SectionLabel('Admin tools'),
+                      const SizedBox(height: 9),
+                      _MenuGroup(
+                        children: [
+                          _ProfileMenuTile(
+                            icon: Icons.cloud_upload_outlined,
+                            title: 'Upload Plant Master',
+                            subtitle: 'Import and update the plant database',
+                            onTap: () =>
+                                _openScreen(const UploadMasterPlantsScreen()),
+                          ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 18),
                     SizedBox(
                       width: double.infinity,
@@ -301,7 +320,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                               )
                             : const Icon(Icons.logout_rounded),
-                        label: Text(_isLoggingOut ? 'Logging out...' : 'Log out'),
+                        label: Text(
+                          _isLoggingOut ? 'Logging out...' : 'Log out',
+                        ),
                       ),
                     ),
                   ],
@@ -341,7 +362,11 @@ class _ProfileHeader extends StatelessWidget {
         borderRadius: BorderRadius.circular(26),
         border: Border.all(color: const Color(0xFFE0ECE1)),
         boxShadow: const [
-          BoxShadow(color: Color(0x12174D2B), blurRadius: 25, offset: Offset(0, 10)),
+          BoxShadow(
+            color: Color(0x12174D2B),
+            blurRadius: 25,
+            offset: Offset(0, 10),
+          ),
         ],
       ),
       child: Column(
@@ -355,11 +380,15 @@ class _ProfileHeader extends StatelessWidget {
                 padding: const EdgeInsets.all(4),
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: LinearGradient(colors: [Color(0xFF2E7D32), Color(0xFF80C783)]),
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF2E7D32), Color(0xFF80C783)],
+                  ),
                 ),
                 child: CircleAvatar(
                   backgroundColor: const Color(0xFFE8F5E9),
-                  backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                  backgroundImage: photoUrl.isNotEmpty
+                      ? NetworkImage(photoUrl)
+                      : null,
                   child: photoUrl.isEmpty
                       ? Text(
                           name.substring(0, 1).toUpperCase(),
@@ -383,7 +412,11 @@ class _ProfileHeader extends StatelessWidget {
                     customBorder: const CircleBorder(),
                     child: const Padding(
                       padding: EdgeInsets.all(9),
-                      child: Icon(Icons.edit_rounded, color: Colors.white, size: 17),
+                      child: Icon(
+                        Icons.edit_rounded,
+                        color: Colors.white,
+                        size: 17,
+                      ),
                     ),
                   ),
                 ),
@@ -410,7 +443,10 @@ class _ProfileHeader extends StatelessWidget {
                 const SizedBox(width: 8),
                 const SizedBox.square(
                   dimension: 17,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF2E7D32)),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Color(0xFF2E7D32),
+                  ),
                 ),
               ],
             ],
@@ -435,7 +471,11 @@ class _ProfileHeader extends StatelessWidget {
                 SizedBox(width: 5),
                 Text(
                   'Jarvis Green Member',
-                  style: TextStyle(color: Color(0xFF2E7D32), fontSize: 12, fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    color: Color(0xFF2E7D32),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),
@@ -476,18 +516,33 @@ class _PlantCountCard extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.13),
                       borderRadius: BorderRadius.circular(13),
                     ),
-                    child: const Icon(Icons.local_florist_rounded, color: Colors.white),
+                    child: const Icon(
+                      Icons.local_florist_rounded,
+                      color: Colors.white,
+                    ),
                   ),
                   const SizedBox(width: 13),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('My plant listings', style: TextStyle(color: Color(0xD9FFFFFF), fontSize: 12)),
+                        const Text(
+                          'My plant listings',
+                          style: TextStyle(
+                            color: Color(0xD9FFFFFF),
+                            fontSize: 12,
+                          ),
+                        ),
                         const SizedBox(height: 2),
                         Text(
-                          count == null ? 'Loading…' : '$count ${count == 1 ? 'plant' : 'plants'}',
-                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
+                          count == null
+                              ? 'Loading…'
+                              : '$count ${count == 1 ? 'plant' : 'plants'}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ],
                     ),
@@ -509,12 +564,16 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          text,
-          style: const TextStyle(color: Color(0xFF174D2B), fontSize: 17, fontWeight: FontWeight.w800),
-        ),
-      );
+    alignment: Alignment.centerLeft,
+    child: Text(
+      text,
+      style: const TextStyle(
+        color: Color(0xFF174D2B),
+        fontSize: 17,
+        fontWeight: FontWeight.w800,
+      ),
+    ),
+  );
 }
 
 class _MenuGroup extends StatelessWidget {
@@ -523,13 +582,13 @@ class _MenuGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFE0E9E1)),
-        ),
-        child: Column(children: children),
-      );
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: const Color(0xFFE0E9E1)),
+    ),
+    child: Column(children: children),
+  );
 }
 
 class _ProfileMenuTile extends StatelessWidget {
@@ -547,20 +606,29 @@ class _ProfileMenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListTile(
-        onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-        leading: Container(
-          padding: const EdgeInsets.all(9),
-          decoration: BoxDecoration(
-            color: const Color(0xFFEAF7EC),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: const Color(0xFF2E7D32), size: 22),
-        ),
-        title: Text(title, style: const TextStyle(color: Color(0xFF263B2B), fontWeight: FontWeight.w700)),
-        subtitle: Text(subtitle, style: const TextStyle(color: Color(0xFF69806E), fontSize: 11)),
-        trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFF9AA99D)),
-      );
+    onTap: onTap,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+    leading: Container(
+      padding: const EdgeInsets.all(9),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEAF7EC),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(icon, color: const Color(0xFF2E7D32), size: 22),
+    ),
+    title: Text(
+      title,
+      style: const TextStyle(
+        color: Color(0xFF263B2B),
+        fontWeight: FontWeight.w700,
+      ),
+    ),
+    subtitle: Text(
+      subtitle,
+      style: const TextStyle(color: Color(0xFF69806E), fontSize: 11),
+    ),
+    trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFF9AA99D)),
+  );
 }
 
 class _SignedOutProfile extends StatelessWidget {
@@ -568,24 +636,30 @@ class _SignedOutProfile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Profile')),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(28),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.person_off_outlined, color: Color(0xFF69806E), size: 58),
-                const SizedBox(height: 14),
-                const Text('Please sign in to view your profile.'),
-                const SizedBox(height: 18),
-                FilledButton(
-                  onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false),
-                  child: const Text('Go to login'),
-                ),
-              ],
+    appBar: AppBar(title: const Text('Profile')),
+    body: Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.person_off_outlined,
+              color: Color(0xFF69806E),
+              size: 58,
             ),
-          ),
+            const SizedBox(height: 14),
+            const Text('Please sign in to view your profile.'),
+            const SizedBox(height: 18),
+            FilledButton(
+              onPressed: () => Navigator.of(
+                context,
+              ).pushNamedAndRemoveUntil('/login', (route) => false),
+              child: const Text('Go to login'),
+            ),
+          ],
         ),
-      );
+      ),
+    ),
+  );
 }
