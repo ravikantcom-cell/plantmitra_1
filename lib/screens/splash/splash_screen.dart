@@ -1,3 +1,4 @@
+// lib/screens/splash/splash_screen.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:plantmitra_1/utils/logger.dart';
@@ -10,112 +11,168 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  /// Splash screen duration
-  static const Duration splashDuration = Duration(milliseconds: 1800);
+  static const Duration _splashDuration = Duration(milliseconds: 2000);
+  bool _hasNavigated = false;
 
   @override
   void initState() {
     super.initState();
-    Logger.debug('🚀 SplashScreen started');
-    _checkAuthStatus();
+    Logger.debug('SplashScreen started');
+    _openNextScreen();
   }
 
-  Future<void> _checkAuthStatus() async {
-    Logger.debug('Checking login status...');
+  Future<void> _openNextScreen() async {
+    try {
+      await Future<void>.delayed(_splashDuration);
 
-    // Show splash for a short time
-    await Future.delayed(splashDuration);
+      if (!mounted || _hasNavigated) return;
 
-    final user = FirebaseAuth.instance.currentUser;
+      final user = FirebaseAuth.instance.currentUser;
+      _hasNavigated = true;
 
-    Logger.debug('User UID : ${user?.uid}');
-    Logger.debug('User Name: ${user?.displayName}');
-    Logger.debug('User Email: ${user?.email}');
+      Logger.debug(
+        user == null
+            ? 'Splash: opening login screen'
+            : 'Splash: opening home screen for ${user.uid}',
+      );
 
-    if (!mounted) return;
+      Navigator.of(context).pushReplacementNamed(
+        user == null ? '/login' : '/home',
+      );
+    } catch (error) {
+      Logger.error('Splash navigation failed: $error');
 
-    if (user != null) {
-      Logger.info('User already logged in');
-
-      Navigator.pushReplacementNamed(context, '/home');
-    } else {
-      Logger.info('No logged in user');
-
-      Navigator.pushReplacementNamed(context, '/login');
+      if (!mounted || _hasNavigated) return;
+      _hasNavigated = true;
+      Navigator.of(context).pushReplacementNamed('/login');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    Logger.debug('Building SplashScreen');
-
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
-              Colors.green.shade700,
-              Colors.green.shade500,
-              Colors.green.shade300,
+              Color(0xFFFFFFFF),
+              Color(0xFFF5FBF5),
+              Color(0xFFEAF7EC),
             ],
           ),
         ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 150,
-                height: 150,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(22),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Column(
+              children: [
+                const Spacer(flex: 3),
+                TweenAnimationBuilder<double>(
+                  duration: const Duration(milliseconds: 900),
+                  curve: Curves.easeOutBack,
+                  tween: Tween<double>(begin: 0.78, end: 1),
+                  builder: (context, scale, child) {
+                    return Transform.scale(scale: scale, child: child);
+                  },
+                  child: Container(
+                    width: 220,
+                    height: 220,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFFD9EEDC),
+                        width: 2,
+                      ),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x1F18864B),
+                          blurRadius: 32,
+                          spreadRadius: 3,
+                          offset: Offset(0, 14),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Image.asset(
-                    "assets/logo/jarvis_green_logo_transparent.png",
-                    fit: BoxFit.contain,
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/logo/jarvis_green_logo_transparent.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: const Color(0xFFF0F8F1),
+                            alignment: Alignment.center,
+                            child: const Icon(
+                              Icons.eco_rounded,
+                              color: Color(0xFF18864B),
+                              size: 76,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ),
                 ),
-              ),
-
-              const SizedBox(height: 30),
-
-              const Text(
-                "Jarvis Green",
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                const SizedBox(height: 30),
+                const Text(
+                  'Jarvis Green',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFF174D2B),
+                    fontSize: 34,
+                    height: 1.1,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.7,
+                  ),
                 ),
-              ),
-
-              const SizedBox(height: 8),
-
-              const Text(
-                "Your Plant Companion",
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white70,
+                const SizedBox(height: 11),
+                const Text(
+                  'Grow  •  Share  •  Connect',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFF2E7D32),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.6,
+                  ),
                 ),
-              ),
-
-              const SizedBox(height: 50),
-
-              const CircularProgressIndicator(
-                color: Colors.white,
-              ),
-            ],
+                const SizedBox(height: 7),
+                const Text(
+                  'Your greener journey starts here',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFF69806E),
+                    fontSize: 13,
+                  ),
+                ),
+                const Spacer(flex: 3),
+                SizedBox(
+                  width: 112,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: const LinearProgressIndicator(
+                      minHeight: 4,
+                      backgroundColor: Color(0xFFD7E9D9),
+                      color: Color(0xFF2E7D32),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                const Text(
+                  'Preparing your garden…',
+                  style: TextStyle(
+                    color: Color(0xFF607565),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 34),
+              ],
+            ),
           ),
         ),
       ),

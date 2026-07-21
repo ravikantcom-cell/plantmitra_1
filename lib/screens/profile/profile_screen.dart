@@ -1,9 +1,15 @@
+// lib/screens/profile/profile_screen.dart
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:plantmitra_1/screens/auth/login_screen.dart';
-import 'package:plantmitra_1/screens/favorites/favorite_screen.dart';
-import 'package:plantmitra_1/screens/chat/chat_list_screen.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:plantmitra_1/screens/add_plant/add_plant_screen.dart';
+import 'package:plantmitra_1/screens/chat/chat_list_screen.dart';
+import 'package:plantmitra_1/screens/favorites/favorite_screen.dart';
+import 'package:plantmitra_1/screens/my_plants/my_plants_screen.dart';
+import 'package:plantmitra_1/screens/settings/notification_settings_screen.dart';
+import 'package:plantmitra_1/screens/settings/settings_screen.dart';
+import 'package:plantmitra_1/utils/logger.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -13,8 +19,16 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  static const Color _darkGreen = Color(0xFF174D2B);
+  static const Color _green = Color(0xFF2E7D32);
+  static const Color _secondaryText = Color(0xFF69806E);
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   User? _user;
+  bool _isLoggingOut = false;
+  bool _isUpdatingProfile = false;
 
   @override
   void initState() {
@@ -22,189 +36,556 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _user = _auth.currentUser;
   }
 
+  Future<void> _openScreen(Widget screen) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => screen),
+    );
+  }
+
+  Future<void> _confirmLogout() async {
+    if (_isLoggingOut) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.logout_rounded, color: Colors.red),
+        title: const Text('Log out?'),
+        content: const Text(
+          'You will need to sign in again to access your plants, favorites and chats.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Log out'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) await _logout();
+  }
+
   Future<void> _logout() async {
-    await _auth.signOut();
-    if (mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (route) => false,
-      );
+    setState(() => _isLoggingOut = true);
+    try {
+      // Sign out from both Firebase and Google so account selection works
+      // correctly on the next login.
+      try {
+        await GoogleSignIn().signOut();
+      } catch (error) {
+        Logger.warning('Google sign-out warning: $error');
+      }
+      await _auth.signOut();
+
+      if (!mounted) return;
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+    } catch (error) {
+      Logger.error('Logout failed: $error');
+      if (mounted) {
+        _showMessage('Could not log out. Please try again.', isError: true);
+      }
+    } finally {
+      if (mounted) setState(() => _isLoggingOut = false);
     }
+  }
+
+  Future<void> _showEditProfileDialog() async {
+    final user = _user;
+    if (user == null || _isUpdatingProfile) return;
+
+    final controller = TextEditingController(text: user.displayName ?? '');
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.person_outline_rounded, color: _green),
+        title: const Text('Edit profile'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          textInputAction: TextInputAction.done,
+          decoration: InputDecoration(
+            labelText: 'Display name',
+            prefixIcon: const Icon(Icons.badge_outlined, color: _green),
+            filled: true,
+            fillColor: const Color(0xFFF7FAF7),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+          ),
+          onSubmitted: (value) => Navigator.pop(dialogContext, value.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, controller.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+
+    if (newName == null || newName.trim().length < 2) {
+      if (newName != null && mounted) {
+        _showMessage('Please enter a valid name.', isError: true);
+      }
+      return;
+    }
+    await _updateProfileName(newName.trim());
+  }
+
+  Future<void> _updateProfileName(String name) async {
+    final user = _user;
+    if (user == null) return;
+    setState(() => _isUpdatingProfile = true);
+
+    try {
+      await user.updateDisplayName(name);
+      await _firestore.collection('users').doc(user.uid).set({
+        'displayName': name,
+        'name': name,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      await user.reload();
+
+      if (!mounted) return;
+      setState(() => _user = _auth.currentUser);
+      _showMessage('Profile updated successfully.');
+    } catch (error) {
+      Logger.error('Profile update failed: $error');
+      if (mounted) {
+        _showMessage('Could not update your profile. Please try again.', isError: true);
+      }
+    } finally {
+      if (mounted) setState(() => _isUpdatingProfile = false);
+    }
+  }
+
+  void _showComingSoon(String feature) {
+    _showMessage('$feature is coming soon.');
+  }
+
+  void _showMessage(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: isError ? Colors.red.shade700 : _darkGreen,
+        ),
+      );
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_user == null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Profile'),
-          backgroundColor: Colors.green,
-          foregroundColor: Colors.white,
-        ),
-        body: const Center(
-          child: Text('Please login to view profile'),
-        ),
-      );
-    }
+    final user = _user;
+    if (user == null) return const _SignedOutProfile();
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F8F4),
       appBar: AppBar(
         title: const Text('Profile'),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: _darkGreen,
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Profile Header
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(15),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.shade200,
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundImage: _user!.photoURL != null
-                        ? NetworkImage(_user!.photoURL!)
-                        : null,
-                    child: _user!.photoURL == null
-                        ? Text(
-                            _user!.displayName?.substring(0, 1).toUpperCase() ?? '?',
-                            style: const TextStyle(
-                              fontSize: 40,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          )
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    _user!.displayName ?? 'User',
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    _user!.email ?? 'No email',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Menu Items
-            _buildMenuItem(
-              icon: Icons.add_circle_outline,
-              title: 'Add New Plant',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AddPlantScreen()),
-                );
-              },
-            ),
-            _buildMenuItem(
-              icon: Icons.favorite_border,
-              title: 'My Favorites',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const FavoriteScreen()),
-                );
-              },
-            ),
-            _buildMenuItem(
-              icon: Icons.chat_bubble_outline,
-              title: 'My Chats',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ChatListScreen()),
-                );
-              },
-            ),
-            _buildMenuItem(
-              icon: Icons.history,
-              title: 'My Orders',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Orders coming soon!')),
-                );
-              },
-            ),
-            _buildMenuItem(
-              icon: Icons.settings,
-              title: 'Settings',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Settings coming soon!')),
-                );
-              },
-            ),
-            
-            const Divider(height: 30),
-            
-            _buildMenuItem(
-              icon: Icons.logout,
-              title: 'Logout',
-              color: Colors.red,
-              onTap: _logout,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMenuItem({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-    Color? color,
-  }) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: ListTile(
-        leading: Icon(
-          icon,
-          color: color ?? Colors.green,
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            color: color ?? Colors.black,
-            fontWeight: FontWeight.w500,
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFFFFFFF), Color(0xFFF5FBF5), Color(0xFFEAF7EC)],
           ),
         ),
-        trailing: Icon(
-          Icons.arrow_forward_ios,
-          size: 16,
-          color: Colors.grey.shade400,
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 36),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 620),
+                child: Column(
+                  children: [
+                    _ProfileHeader(
+                      user: user,
+                      isUpdating: _isUpdatingProfile,
+                      onEdit: _showEditProfileDialog,
+                    ),
+                    const SizedBox(height: 16),
+                    _PlantCountCard(
+                      uid: user.uid,
+                      onTap: () => _openScreen(const MyPlantsScreen()),
+                    ),
+                    const SizedBox(height: 18),
+                    const _SectionLabel('Your garden'),
+                    const SizedBox(height: 9),
+                    _MenuGroup(
+                      children: [
+                        _ProfileMenuTile(
+                          icon: Icons.add_circle_outline_rounded,
+                          title: 'Add New Plant',
+                          subtitle: 'Share a plant with the community',
+                          onTap: () => _openScreen(const AddPlantScreen()),
+                        ),
+                        _ProfileMenuTile(
+                          icon: Icons.favorite_border_rounded,
+                          title: 'My Favorites',
+                          subtitle: 'Plants you have saved',
+                          onTap: () => _openScreen(const FavoriteScreen()),
+                        ),
+                        _ProfileMenuTile(
+                          icon: Icons.chat_bubble_outline_rounded,
+                          title: 'My Chats',
+                          subtitle: 'Your plant conversations',
+                          onTap: () => _openScreen(const ChatListScreen()),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    const _SectionLabel('Account'),
+                    const SizedBox(height: 9),
+                    _MenuGroup(
+                      children: [
+                        _ProfileMenuTile(
+                          icon: Icons.notifications_none_rounded,
+                          title: 'Notifications',
+                          subtitle: 'Manage notification preferences',
+                          onTap: () =>
+                              _openScreen(const NotificationSettingsScreen()),
+                        ),
+                        _ProfileMenuTile(
+                          icon: Icons.settings_outlined,
+                          title: 'Settings',
+                          subtitle: 'App preferences and privacy',
+                          onTap: () => _openScreen(const SettingsScreen()),
+                        ),
+                        _ProfileMenuTile(
+                          icon: Icons.info_outline_rounded,
+                          title: 'About Jarvis Green',
+                          subtitle: 'Version 1.0.0',
+                          onTap: () => _showComingSoon('About page'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: OutlinedButton.icon(
+                        onPressed: _isLoggingOut ? null : _confirmLogout,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Colors.red),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        icon: _isLoggingOut
+                            ? const SizedBox.square(
+                                dimension: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.red,
+                                ),
+                              )
+                            : const Icon(Icons.logout_rounded),
+                        label: Text(_isLoggingOut ? 'Logging out...' : 'Log out'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
-        onTap: onTap,
       ),
     );
   }
+}
+
+class _ProfileHeader extends StatelessWidget {
+  const _ProfileHeader({
+    required this.user,
+    required this.isUpdating,
+    required this.onEdit,
+  });
+
+  final User user;
+  final bool isUpdating;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = (user.displayName ?? '').trim().isEmpty
+        ? 'Plant Lover'
+        : user.displayName!.trim();
+    final photoUrl = user.photoURL?.trim() ?? '';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: const Color(0xFFE0ECE1)),
+        boxShadow: const [
+          BoxShadow(color: Color(0x12174D2B), blurRadius: 25, offset: Offset(0, 10)),
+        ],
+      ),
+      child: Column(
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 112,
+                height: 112,
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(colors: [Color(0xFF2E7D32), Color(0xFF80C783)]),
+                ),
+                child: CircleAvatar(
+                  backgroundColor: const Color(0xFFE8F5E9),
+                  backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                  child: photoUrl.isEmpty
+                      ? Text(
+                          name.substring(0, 1).toUpperCase(),
+                          style: const TextStyle(
+                            color: Color(0xFF2E7D32),
+                            fontSize: 38,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        )
+                      : null,
+                ),
+              ),
+              Positioned(
+                right: -4,
+                bottom: 2,
+                child: Material(
+                  color: const Color(0xFF2E7D32),
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    onTap: isUpdating ? null : onEdit,
+                    customBorder: const CircleBorder(),
+                    child: const Padding(
+                      padding: EdgeInsets.all(9),
+                      child: Icon(Icons.edit_rounded, color: Colors.white, size: 17),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: Text(
+                  name,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF174D2B),
+                    fontSize: 23,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              if (isUpdating) ...[
+                const SizedBox(width: 8),
+                const SizedBox.square(
+                  dimension: 17,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF2E7D32)),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 5),
+          Text(
+            user.email ?? 'No email available',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Color(0xFF69806E), fontSize: 13),
+          ),
+          const SizedBox(height: 13),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEAF7EC),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.eco_rounded, color: Color(0xFF2E7D32), size: 16),
+                SizedBox(width: 5),
+                Text(
+                  'Jarvis Green Member',
+                  style: TextStyle(color: Color(0xFF2E7D32), fontSize: 12, fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlantCountCard extends StatelessWidget {
+  const _PlantCountCard({required this.uid, required this.onTap});
+  final String uid;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('plants')
+          .where('ownerId', isEqualTo: uid)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final count = snapshot.data?.docs.length;
+        return Material(
+          color: const Color(0xFF174D2B),
+          borderRadius: BorderRadius.circular(20),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.13),
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: const Icon(Icons.local_florist_rounded, color: Colors.white),
+                  ),
+                  const SizedBox(width: 13),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('My plant listings', style: TextStyle(color: Color(0xD9FFFFFF), fontSize: 12)),
+                        const SizedBox(height: 2),
+                        Text(
+                          count == null ? 'Loading…' : '$count ${count == 1 ? 'plant' : 'plants'}',
+                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.arrow_forward_rounded, color: Colors.white),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          text,
+          style: const TextStyle(color: Color(0xFF174D2B), fontSize: 17, fontWeight: FontWeight.w800),
+        ),
+      );
+}
+
+class _MenuGroup extends StatelessWidget {
+  const _MenuGroup({required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE0E9E1)),
+        ),
+        child: Column(children: children),
+      );
+}
+
+class _ProfileMenuTile extends StatelessWidget {
+  const _ProfileMenuTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+        onTap: onTap,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+        leading: Container(
+          padding: const EdgeInsets.all(9),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEAF7EC),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: const Color(0xFF2E7D32), size: 22),
+        ),
+        title: Text(title, style: const TextStyle(color: Color(0xFF263B2B), fontWeight: FontWeight.w700)),
+        subtitle: Text(subtitle, style: const TextStyle(color: Color(0xFF69806E), fontSize: 11)),
+        trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFF9AA99D)),
+      );
+}
+
+class _SignedOutProfile extends StatelessWidget {
+  const _SignedOutProfile();
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('Profile')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.person_off_outlined, color: Color(0xFF69806E), size: 58),
+                const SizedBox(height: 14),
+                const Text('Please sign in to view your profile.'),
+                const SizedBox(height: 18),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false),
+                  child: const Text('Go to login'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
 }

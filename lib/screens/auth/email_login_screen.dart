@@ -1,9 +1,8 @@
 // lib/screens/auth/email_login_screen.dart
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:plantmitra_1/screens/home/home_screen.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:plantmitra_1/constants/app_assets.dart';
 import 'package:plantmitra_1/utils/logger.dart';
 
 class EmailLoginScreen extends StatefulWidget {
@@ -14,16 +13,22 @@ class EmailLoginScreen extends StatefulWidget {
 }
 
 class _EmailLoginScreenState extends State<EmailLoginScreen> {
+  static const Color _darkGreen = Color(0xFF174D2B);
+  static const Color _green = Color(0xFF2E7D32);
+  static const Color _secondaryText = Color(0xFF69806E);
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _isLoginMode = true;
   bool _obscurePassword = true;
+  bool _hasNavigated = false;
 
   @override
   void dispose() {
@@ -35,214 +40,273 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
 
   Future<void> _saveUserData(User user) async {
     try {
-      await _firestore.collection('users').doc(user.uid).set({
+      final reference = _firestore.collection('users').doc(user.uid);
+      final snapshot = await reference.get();
+      final enteredName = _nameController.text.trim();
+
+      final data = <String, dynamic>{
         'uid': user.uid,
-        'displayName': user.displayName ?? _nameController.text.trim(),
-        'name': user.displayName ?? _nameController.text.trim(),
+        'displayName': user.displayName ?? enteredName,
+        'name': user.displayName ?? enteredName,
         'email': user.email ?? '',
         'photoURL': user.photoURL ?? '',
-        'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-    } catch (e) {
-      Logger.error('Error saving user data: $e');
+      };
+
+      if (!snapshot.exists) {
+        data['createdAt'] = FieldValue.serverTimestamp();
+      }
+
+      await reference.set(data, SetOptions(merge: true));
+    } catch (error) {
+      Logger.error('Error saving email user data: $error');
     }
   }
 
-  Future<void> _signInWithEmail() async {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
+  String? _validateName(String? value) {
+    if (_isLoginMode) return null;
+    final name = value?.trim() ?? '';
+    if (name.isEmpty) return 'Please enter your full name';
+    if (name.length < 2) return 'Please enter a valid name';
+    return null;
+  }
 
-    if (email.isEmpty || password.isEmpty) {
-      Fluttertoast.showToast(msg: 'Please fill all fields');
-      return;
+  String? _validateEmail(String? value) {
+    final email = value?.trim() ?? '';
+    if (email.isEmpty) return 'Please enter your email address';
+    final validEmail = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+    if (!validEmail.hasMatch(email)) return 'Please enter a valid email address';
+    return null;
+  }
+
+  String? _validatePassword(String? value) {
+    final password = value ?? '';
+    if (password.isEmpty) return 'Please enter your password';
+    if (!_isLoginMode && password.length < 6) {
+      return 'Password must contain at least 6 characters';
     }
+    return null;
+  }
+
+  Future<void> _submit() async {
+    FocusScope.of(context).unfocus();
+    if (_isLoading || !(_formKey.currentState?.validate() ?? false)) return;
 
     setState(() => _isLoading = true);
-
     try {
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
 
-      if (userCredential.user != null) {
-        await _saveUserData(userCredential.user!);
-        Fluttertoast.showToast(
-          msg: 'Welcome back! 👋',
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
+      late final UserCredential credential;
+      if (_isLoginMode) {
+        credential = await _auth.signInWithEmailAndPassword(
+          email: email,
+          password: password,
         );
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const HomeScreen()),
-          );
-        }
+      } else {
+        credential = await _auth.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+
+        await credential.user?.updateDisplayName(_nameController.text.trim());
+        await credential.user?.reload();
       }
-    } catch (e) {
-      String errorMessage = 'Login failed';
-      if (e is FirebaseAuthException) {
-        switch (e.code) {
-          case 'user-not-found':
-            errorMessage = 'No user found with this email';
-            break;
-          case 'wrong-password':
-            errorMessage = 'Incorrect password';
-            break;
-          case 'invalid-email':
-            errorMessage = 'Invalid email address';
-            break;
-          case 'user-disabled':
-            errorMessage = 'This account has been disabled';
-            break;
-          default:
-            errorMessage = e.message ?? 'Login failed';
-        }
+
+      final user = _auth.currentUser ?? credential.user;
+      if (user == null) {
+        throw FirebaseAuthException(
+          code: 'missing-user',
+          message: 'Authentication completed without a user account.',
+        );
       }
-      Fluttertoast.showToast(
-        msg: errorMessage,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
+
+      await _saveUserData(user);
+      if (!mounted || _hasNavigated) return;
+
+      _showMessage(
+        _isLoginMode ? 'Welcome back!' : 'Your account has been created.',
       );
-    } finally {
+      _hasNavigated = true;
+      Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+    } on FirebaseAuthException catch (error) {
+      Logger.error('Email authentication error: ${error.code}');
+      if (mounted) _showMessage(_friendlyAuthError(error), isError: true);
+    } catch (error) {
+      Logger.error('Unexpected email authentication error: $error');
       if (mounted) {
-        setState(() => _isLoading = false);
+        _showMessage('Something went wrong. Please try again.', isError: true);
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _signUpWithEmail() async {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-    final name = _nameController.text.trim();
-
-    if (email.isEmpty || password.isEmpty || name.isEmpty) {
-      Fluttertoast.showToast(msg: 'Please fill all fields');
-      return;
-    }
-
-    if (password.length < 6) {
-      Fluttertoast.showToast(msg: 'Password must be at least 6 characters');
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      if (userCredential.user != null) {
-        await userCredential.user!.updateDisplayName(name);
-        await _saveUserData(userCredential.user!);
-        
-        Fluttertoast.showToast(
-          msg: 'Account created successfully! 🎉',
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-        );
-        
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const HomeScreen()),
-          );
-        }
-      }
-    } catch (e) {
-      String errorMessage = 'Sign up failed';
-      if (e is FirebaseAuthException) {
-        switch (e.code) {
-          case 'email-already-in-use':
-            errorMessage = 'This email is already registered';
-            break;
-          case 'invalid-email':
-            errorMessage = 'Invalid email address';
-            break;
-          case 'weak-password':
-            errorMessage = 'Password is too weak';
-            break;
-          default:
-            errorMessage = e.message ?? 'Sign up failed';
-        }
-      }
-      Fluttertoast.showToast(
-        msg: errorMessage,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+  String _friendlyAuthError(FirebaseAuthException error) {
+    switch (error.code) {
+      case 'invalid-credential':
+      case 'user-not-found':
+      case 'wrong-password':
+        return 'The email or password is incorrect.';
+      case 'invalid-email':
+        return 'Please enter a valid email address.';
+      case 'email-already-in-use':
+        return 'An account already exists with this email.';
+      case 'weak-password':
+        return 'Please choose a stronger password.';
+      case 'user-disabled':
+        return 'This account has been disabled.';
+      case 'too-many-requests':
+        return 'Too many attempts. Please wait and try again.';
+      case 'network-request-failed':
+        return 'No internet connection. Please check your network.';
+      case 'operation-not-allowed':
+        return 'Email sign-in is not enabled for this app.';
+      default:
+        return error.message ?? 'Authentication failed. Please try again.';
     }
   }
 
-  void _showForgotPasswordDialog() {
-    final TextEditingController emailController = TextEditingController();
+  Future<void> _showForgotPasswordDialog() async {
+    final resetController = TextEditingController(text: _emailController.text.trim());
+    bool sending = false;
 
-    showDialog(
+    await showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Reset Password'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Enter your email address and we\'ll send you a password reset link.',
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: emailController,
-              decoration: InputDecoration(
-                hintText: 'Email Address',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+      barrierDismissible: !sending,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              icon: const Icon(Icons.lock_reset_rounded, color: _green, size: 32),
+              title: const Text('Reset password'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Enter your email and we will send you a password reset link.',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 18),
+                  TextField(
+                    controller: resetController,
+                    enabled: !sending,
+                    autofocus: true,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.done,
+                    decoration: _inputDecoration(
+                      label: 'Email address',
+                      icon: Icons.mail_outline_rounded,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final email = emailController.text.trim();
-              if (email.isEmpty) {
-                Fluttertoast.showToast(msg: 'Please enter your email');
-                return;
-              }
+              actions: [
+                TextButton(
+                  onPressed: sending ? null : () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: sending
+                      ? null
+                      : () async {
+                          final email = resetController.text.trim();
+                          if (_validateEmail(email) != null) {
+                            _showMessage(
+                              'Please enter a valid email address.',
+                              isError: true,
+                            );
+                            return;
+                          }
 
-              try {
-                await _auth.sendPasswordResetEmail(email: email);
-                if (mounted) {
-                  Navigator.pop(context);
-                }
-                Fluttertoast.showToast(
-                  msg: 'Password reset email sent! Check your inbox.',
-                  backgroundColor: Colors.green,
-                  textColor: Colors.white,
-                );
-              } catch (e) {
-                Fluttertoast.showToast(
-                  msg: 'Failed to send reset email',
-                  backgroundColor: Colors.red,
-                  textColor: Colors.white,
-                );
-              }
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.green,
-            ),
-            child: const Text('Send'),
-          ),
-        ],
+                          setDialogState(() => sending = true);
+                          try {
+                            await _auth.sendPasswordResetEmail(email: email);
+                            if (dialogContext.mounted) Navigator.pop(dialogContext);
+                            if (mounted) {
+                              _showMessage('Password reset email sent. Check your inbox.');
+                            }
+                          } on FirebaseAuthException catch (error) {
+                            if (dialogContext.mounted) {
+                              setDialogState(() => sending = false);
+                            }
+                            if (mounted) {
+                              _showMessage(_friendlyAuthError(error), isError: true);
+                            }
+                          }
+                        },
+                  child: sending
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Send link'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    resetController.dispose();
+  }
+
+  void _toggleMode() {
+    if (_isLoading) return;
+    setState(() {
+      _isLoginMode = !_isLoginMode;
+      _passwordController.clear();
+      _obscurePassword = true;
+    });
+    _formKey.currentState?.reset();
+  }
+
+  void _showMessage(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: isError ? Colors.red.shade700 : _darkGreen,
+        ),
+      );
+  }
+
+  InputDecoration _inputDecoration({
+    required String label,
+    required IconData icon,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: _green),
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: const Color(0xFFF8FBF8),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Color(0xFFDCE8DD)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Color(0xFFDCE8DD)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: _green, width: 1.7),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Colors.red),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Colors.red, width: 1.7),
       ),
     );
   }
@@ -250,206 +314,237 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF6FBF6),
       appBar: AppBar(
-        title: Text(_isLoginMode ? 'Sign In' : 'Create Account'),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
+        foregroundColor: _darkGreen,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (mounted) {
-              Navigator.pop(context);
-            }
-          },
+        title: Text(_isLoginMode ? 'Email sign in' : 'Create account'),
+      ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFFFFFFF), Color(0xFFF5FBF5), Color(0xFFEAF7EC)],
+          ),
+        ),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Form(
+                  key: _formKey,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  child: Column(
+                    children: [
+                      _buildLogo(),
+                      const SizedBox(height: 20),
+                      Text(
+                        _isLoginMode ? 'Welcome back!' : 'Join Jarvis Green',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: _darkGreen,
+                          fontSize: 27,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.4,
+                        ),
+                      ),
+                      const SizedBox(height: 7),
+                      Text(
+                        _isLoginMode
+                            ? 'Sign in to continue your greener journey.'
+                            : 'Create an account and start growing with us.',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: _secondaryText,
+                          fontSize: 14,
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 26),
+                      _buildFormCard(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Logo
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: Colors.green.shade50,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.local_florist,
-                size: 50,
-                color: Colors.green,
-              ),
-            ),
-            const SizedBox(height: 30),
+    );
+  }
 
-            // Title
-            Text(
-              _isLoginMode ? 'Welcome Back!' : 'Join Jarvis Green!',
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _isLoginMode 
-                  ? 'Sign in to continue' 
-                  : 'Create your account to get started',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade600,
-              ),
-            ),
-            const SizedBox(height: 30),
+  Widget _buildLogo() {
+    return Container(
+      width: 200,
+      height: 200,
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFD9EEDC), width: 2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x1A18864B),
+            blurRadius: 24,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      child: ClipOval(
+        child: Image.asset(
+          AppAssets.logo,
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) => Container(
+            color: const Color(0xFFF0F8F1),
+            alignment: Alignment.center,
+            child: const Icon(Icons.eco_rounded, color: _green, size: 72),
+          ),
+        ),
+      ),
+    );
+  }
 
-            // Name Field (Only for Sign Up)
-            if (!_isLoginMode)
-              Column(
-                children: [
-                  TextField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      labelText: 'Full Name',
-                      prefixIcon: const Icon(Icons.person, color: Colors.green),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey.shade50,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              ),
-
-            // Email Field
-            TextField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                labelText: 'Email Address',
-                prefixIcon: const Icon(Icons.email, color: Colors.green),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Colors.grey.shade50,
+  Widget _buildFormCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE0ECE1)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0F174D2B),
+            blurRadius: 24,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          if (!_isLoginMode) ...[
+            TextFormField(
+              controller: _nameController,
+              enabled: !_isLoading,
+              textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.next,
+              autofillHints: const [AutofillHints.name],
+              validator: _validateName,
+              decoration: _inputDecoration(
+                label: 'Full name',
+                icon: Icons.person_outline_rounded,
               ),
             ),
             const SizedBox(height: 16),
-
-            // Password Field
-            TextField(
-              controller: _passwordController,
-              obscureText: _obscurePassword,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                prefixIcon: const Icon(Icons.lock, color: Colors.green),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                    color: Colors.grey,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    });
-                  },
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Colors.grey.shade50,
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // Forgot Password (Only for Login)
-            if (_isLoginMode)
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: _showForgotPasswordDialog,
-                  child: const Text(
-                    'Forgot Password?',
-                    style: TextStyle(
-                      color: Colors.green,
-                    ),
-                  ),
-                ),
-              ),
-
-            const SizedBox(height: 20),
-
-            // Submit Button
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : (_isLoginMode ? _signInWithEmail : _signUpWithEmail),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Text(
-                        _isLoginMode ? 'Sign In' : 'Create Account',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Toggle between Login and Sign Up
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  _isLoginMode 
-                      ? "Don't have an account? " 
-                      : "Already have an account? ",
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _isLoginMode = !_isLoginMode;
-                      _passwordController.clear();
-                    });
-                  },
-                  child: Text(
-                    _isLoginMode ? 'Sign Up' : 'Sign In',
-                    style: const TextStyle(
-                      color: Colors.green,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ],
-        ),
+          TextFormField(
+            controller: _emailController,
+            enabled: !_isLoading,
+            keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.next,
+            autofillHints: const [AutofillHints.email],
+            autocorrect: false,
+            validator: _validateEmail,
+            decoration: _inputDecoration(
+              label: 'Email address',
+              icon: Icons.mail_outline_rounded,
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _passwordController,
+            enabled: !_isLoading,
+            obscureText: _obscurePassword,
+            textInputAction: TextInputAction.done,
+            autofillHints: _isLoginMode
+                ? const [AutofillHints.password]
+                : const [AutofillHints.newPassword],
+            validator: _validatePassword,
+            onFieldSubmitted: (_) => _submit(),
+            decoration: _inputDecoration(
+              label: 'Password',
+              icon: Icons.lock_outline_rounded,
+              suffixIcon: IconButton(
+                tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+                onPressed: _isLoading
+                    ? null
+                    : () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
+                icon: Icon(
+                  _obscurePassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  color: _secondaryText,
+                ),
+              ),
+            ),
+          ),
+          if (_isLoginMode)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: _isLoading ? null : _showForgotPasswordDialog,
+                child: const Text('Forgot password?'),
+              ),
+            )
+          else
+            const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 54,
+            child: FilledButton(
+              onPressed: _isLoading ? null : _submit,
+              style: FilledButton.styleFrom(
+                backgroundColor: _green,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: _green.withValues(alpha: 0.45),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: _isLoading
+                  ? const SizedBox.square(
+                      dimension: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(
+                      _isLoginMode ? 'Sign in' : 'Create account',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                _isLoginMode
+                    ? "Don't have an account?"
+                    : 'Already have an account?',
+                style: const TextStyle(color: _secondaryText, fontSize: 13),
+              ),
+              TextButton(
+                onPressed: _isLoading ? null : _toggleMode,
+                child: Text(_isLoginMode ? 'Sign up' : 'Sign in'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
